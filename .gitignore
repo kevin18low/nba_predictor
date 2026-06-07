@@ -1,0 +1,26 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database (too large, local only)
+data/*.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models (we'll save these locally, not on GitHub)
+models/
+
+# Environment variables (sensitive keys etc)
+.env
+
+# VS Code
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
