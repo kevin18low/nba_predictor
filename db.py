@@ -28,14 +28,20 @@ def init_db():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS game_states (
-            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id               TEXT,
-            quarter               INTEGER,
-            time_remaining_secs   FLOAT,
-            home_score            INTEGER,
-            away_score            INTEGER,
-            score_diff            INTEGER,  
-            home_win              INTEGER
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id             TEXT,
+            quarter             INTEGER,
+            time_remaining_secs FLOAT,
+            home_score          INTEGER,
+            away_score          INTEGER,
+            score_diff          INTEGER,
+            home_win            INTEGER,
+            player_name         TEXT,
+            action_type         TEXT,
+            shot_result         TEXT,
+            x                   REAL,
+            y                   REAL,
+            shot_distance       REAL
         )
     """)
 
