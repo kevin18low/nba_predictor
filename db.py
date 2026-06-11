@@ -45,6 +45,21 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_game_states_game_id
+        ON game_states(game_id)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_game_states_player
+        ON game_states(player_name)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_game_states_shot
+        ON game_states(shot_result)
+    """)
+
     conn.commit()
     conn.close()
     print(f"Database initialized at: {DB_PATH}")
