@@ -1,12 +1,8 @@
 import pandas as pd
-import numpy as np
-import sqlite3
 import pickle
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split, cross_validate
-from sklearn.metrics import accuracy_score, log_loss
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import log_loss
 from db import get_connection
 
 # for each game, compute each team's win rate from all prior games. Captures hot streaks and team stength
@@ -107,8 +103,8 @@ def engineer_feats(df):
 
     df["close_game"] = ((df["score_diff"].abs() <= 5) & (df["quarter"] >= 4)).astype(int)
 
-    # win rate differential; positive means home team is stronger
-    df["winrate_diff"] = df["home_win_rate"] - df["away_win_rate"]
+    # win rate differential; positive means home team is stronger. Shrunk towards zero to reduce influence
+    df["winrate_diff"] = (df["home_win_rate"] - df["away_win_rate"]) * 0.5
 
     # weighted winrate; stronger teams protecting a lead late is impactful
     df["winrate_diff_x_progress"] = df["winrate_diff"] * df["game_progress"]
@@ -134,59 +130,35 @@ def train(df):
     ]
 
     X = df[feats]
-    y = df['home_win']
+    y = df["home_win"]
+    w = 0.5 + df["game_progress"] # weigh late game states as more impactful
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=18
+    X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
+        X, y, w, test_size=0.3, random_state=18
     )
-
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
 
     scoring = ["accuracy", "neg_log_loss"]
 
-    print("\nTraining Logistic Regression...")
-    lr = LogisticRegression(max_iter=1000)
-    lr_cv = cross_validate(lr, X_train_scaled, y_train, cv=5, scoring=scoring, n_jobs=-1)
-    print(f"CV Accuracy: {lr_cv['test_accuracy'].mean():.4f} ± {lr_cv['test_accuracy'].std():.4f}")
-    print(f"CV Log Loss: {-lr_cv['test_neg_log_loss'].mean():.4f} ± {lr_cv['test_neg_log_loss'].std():.4f}")
-
-    print("\nTraining Gradient Boosting...")
+    print("\nTraining Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
-    gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1)
-    print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
-    print(f"CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} ± {gb_cv['test_neg_log_loss'].std():.4f}")
-    
-    lr_ll = -lr_cv['test_neg_log_loss'].mean()
-    gb_ll = -gb_cv['test_neg_log_loss'].mean()
+    gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1, params={"sample_weight": w_train})
+    print(f"  CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
+    print(f"  CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} ± {gb_cv['test_neg_log_loss'].std():.4f}")
 
-    if gb_ll < lr_ll:
-        print("\nFitting using Gradient Boosting.")
-        best_model = gb
-        best_model.fit(X_train, y_train)
-        final_acc = best_model.score(X_test, y_test)
-        final_ll = log_loss(y_test, best_model.predict_proba(X_test))
-    else:
-        print("\nFitting using Logistic Regression.")
-        best_model = lr
-        best_model.fit(X_train_scaled, y_train)
-        final_acc = best_model.score(X_test_scaled, y_test)
-        final_ll = log_loss(y_test, best_model.predict_proba(X_test_scaled))
+    print("\nFitting on full training set.")
+    gb.fit(X_train, y_train, sample_weight=w_train)
+    final_acc = gb.score(X_test, y_test)
+    final_ll = log_loss(y_test, gb.predict_proba(X_test))
 
-    print(f"\nFinal Scores:")
-    print(f"Accuracy:  {final_acc:.4f}")
-    print(f"Log Loss:  {final_ll:.4f}")
+    print(f"\nFinal Test Scores:")
+    print(f"  Accuracy:  {final_acc:.4f}")
+    print(f"  Log Loss:  {final_ll:.4f}")
 
     with open("models/win_prob_model.pkl", "wb") as f:
-        pickle.dump(best_model, f)
-
-    with open("models/win_prob_scaler.pkl", "wb") as f:
-        pickle.dump(scaler, f)
+        pickle.dump(gb, f)
 
     print("\nModel saved to models/")
-
-    return best_model, scaler
+    return gb
 
 if __name__ == "__main__":
     df = load_game_states()
