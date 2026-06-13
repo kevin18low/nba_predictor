@@ -47,6 +47,26 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shot_attempts (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id       INTEGER,
+            player_name     TEXT,
+            game_id         TEXT,
+            game_date       TEXT,
+            season          TEXT,
+            team            TEXT,
+            x               REAL,
+            y               REAL,
+            shot_distance   REAL,
+            shot_zone       TEXT,
+            shot_zone_area  TEXT,
+            shot_type       TEXT,
+            action_type     TEXT,
+            made            INTEGER
+        )
+    """)
+
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_game_states_game_id
         ON game_states(game_id)
     """)
@@ -64,6 +84,16 @@ def init_db():
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_game_states_shot_player
         ON game_states(person_id, shot_result)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_shot_attempts_player
+        ON shot_attempts(player_id)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_shot_attempts_game
+        ON shot_attempts(game_id)
     """)
 
     conn.commit()
