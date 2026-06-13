@@ -1,5 +1,4 @@
 import time
-import pandas as pd
 from nba_api.stats.endpoints import playbyplayv3
 from db import get_connection
 
@@ -14,7 +13,7 @@ def parse_time(clock_str):
         return None
     
 # fetch play-by-play stats for one game and store individual game moments
-def get_play_by_play(game_id, home_win):
+def get_play_by_play(game_id, home_win, conn):
     try:
         play_by_play = playbyplayv3.PlayByPlayV3(game_id=game_id)
         df = play_by_play.get_data_frames()[0]
@@ -22,15 +21,25 @@ def get_play_by_play(game_id, home_win):
         print(f"Failed to fetch game {game_id}: {e}")
         return 0
     
-    df = df[df["scoreHome"].notna() & df["scoreAway"].notna()].copy()
-    df = df[df["scoreHome"] != ""].copy()
+    # keep rows that either update the score or are shot attempts
+    df = df[
+        (df["scoreHome"].notna() & (df["scoreHome"] != "")) |
+        (df["shotResult"].notna() & (df["shotResult"] != ""))
+    ].copy()
+
+    # forward fill scores so every row has the current score
+    df["scoreHome"] = df["scoreHome"].replace("", None)
+    df["scoreAway"] = df["scoreAway"].replace("", None)
+    df[["scoreHome", "scoreAway"]] = df[["scoreHome", "scoreAway"]].ffill()
+
+    # drop rows still missing scores (before first score of the game)
+    df = df[df["scoreHome"].notna()].copy()
 
     if df.empty:
         return 0
     
-    conn = get_connection()
     cursor = conn.cursor()
-    inserted = 0
+    rows_to_insert = []
 
     for _, row in df.iterrows():
         try:
@@ -43,42 +52,35 @@ def get_play_by_play(game_id, home_win):
             if time_remaining_secs is None:
                 continue
 
-            # columns may be empty for non-shot events
-            player_name  = row.get("playerName") or None
+            player_name = row.get("playerName") or None
             person_id = int(row["personId"]) if row.get("personId") not in (None, "") else None
-            action_type  = row.get("actionType") or None
-            shot_result  = row.get("shotResult") or None
+            action_type = row.get("actionType") or None
+            shot_result = row.get("shotResult") or None
             x = float(row["xLegacy"]) if row.get("xLegacy") not in (None, "") else None
             y = float(row["yLegacy"]) if row.get("yLegacy") not in (None, "") else None
             shot_distance = float(row["shotDistance"]) if row.get("shotDistance") not in (None, "") else None
 
-            cursor.execute("""
-                INSERT INTO game_states 
-                (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, person_id, action_type, shot_result, x, y, shot_distance)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, ( 
-                game_id,
-                quarter,
-                time_remaining_secs,
-                home_score,
-                away_score,
-                score_diff,
-                home_win,
-                player_name,
-                person_id,
-                action_type,
-                shot_result,
-                x,
-                y,
-                shot_distance
+            rows_to_insert.append((
+                game_id, quarter, time_remaining_secs,
+                home_score, away_score, score_diff, home_win,
+                player_name, person_id, action_type, shot_result,
+                x, y, shot_distance
             ))
-            inserted += 1
         except Exception as e:
             continue
 
+    if not rows_to_insert:
+        return 0
+
+    cursor = conn.cursor()
+    cursor.executemany("""
+        INSERT INTO game_states 
+        (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, person_id, action_type, shot_result, x, y, shot_distance)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, rows_to_insert)
     conn.commit()
-    conn.close()
-    return inserted
+    
+    return len(rows_to_insert)
 
 # process play-by-play for all games in the games table
 def process_games(limit=None):
@@ -94,7 +96,6 @@ def process_games(limit=None):
             WHERE gs.game_id = g.game_id
         )     
     """).fetchall()
-    conn.close()
 
     if limit:
         games = games[:limit]
@@ -105,9 +106,11 @@ def process_games(limit=None):
         game_id = game["game_id"]
         home_win = game["home_win"]
 
-        rows = get_play_by_play(game_id, home_win)
+        rows = get_play_by_play(game_id, home_win, conn)
         print(f"[{i+1}/{len(games)}] {game_id}: {rows} states stored")
         time.sleep(0.2)
+
+    conn.close()
 
 if __name__ == "__main__":
     process_games()

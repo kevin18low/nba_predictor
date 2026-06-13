@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from db import get_connection
 
 # seconds in a full regulation game

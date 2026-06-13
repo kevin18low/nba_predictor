@@ -1,10 +1,9 @@
 import time
-import pandas as pd
 from nba_api.stats.endpoints import leaguegamefinder
 from db import get_connection
 
 
-# Fetch and store all games for a given season in the games table
+# fetch and store all games for a given season in the games table
 def fetch_and_store_games(season="2025-26", season_type="Regular Season"):
     print(f"Fetching games from the {season} {season_type}.")
 
