@@ -5,8 +5,9 @@ from nba_api.stats.endpoints import scoreboardv3, playbyplayv3
 from train_win_probability import compute_winrates
 from fetch_playbyplay import parse_time
 from db import get_connection
+from predict_score import predict_score
 
-# load saved model and scaler
+# load saved model
 def load_model():
     with open("models/win_prob_model.pkl", "rb") as f:
         model = pickle.load(f)
@@ -118,68 +119,6 @@ def build_features(state, home_win_rate, away_win_rate):
         "winrate_diff_x_progress": winrate_diff_x_progress
     }])
 
-# predict win probability for home team for a single game state
-def predict(model, features):
-    prob = model.predict_proba(features)[0]
-    return prob[1]
-
-# poll live games every 30 seconds
-def run(poll_interval=30):
-    print("Loading model...")
-    model, scaler = load_model()
-
-    print("Loading team win rates...")
-    win_rates = compute_winrates()
-
-    # build simple lookup: game_id -> (home_win_rate, away_win_rate)
-    wr_by_game = {}
-    for _, row in win_rates.iterrows():
-        wr_by_game[row["game_id"]] = (row["home_win_rate"], row["away_win_rate"])
-
-    print("Fetching today's games...")
-    games = get_todays_games()
-
-    if not games:
-        return
-
-    print(f"\nFound {len(games)} games today:")
-    for game in games:
-        print(f"  {game['away_team']} @ {game['home_team']} — {game['status']}")
-
-    print(f"\nPolling every {poll_interval}s. Press Ctrl+C to stop.\n")
-
-    while True:
-        for game in games:
-            game_id = game["game_id"]
-            home_team = game["home_team"]
-            away_team = game["away_team"]
-
-            state = get_live_game_state(game_id)
-            if state is None:
-                print(f"  {away_team} @ {home_team}: no live data yet")
-                continue
-
-            # default to 0.5 win rate if game not in historical data
-            home_wr, away_wr = wr_by_game.get(game_id, (0.5, 0.5))
-
-            feats = build_features(state, home_wr, away_wr)
-            home_win_prob = predict(model, scaler, feats)
-
-            q = state["quarter"]
-            t = state["time_remaining_secs"]
-            mins = int(t // 60)
-            secs = int(t % 60)
-
-            print(
-                f"  {away_team} {state['away_score']} @ "
-                f"{home_team} {state['home_score']} | "
-                f"Q{q} {mins}:{secs:02d} | "
-                f"Home win prob: {home_win_prob:.1%}"
-            )
-
-        print()
-        time.sleep(poll_interval)
-
 # get teams' most recent win rates
 def get_team_winrates(win_rates, games):
     games_sorted = games.sort_values("game_date", ascending=True)
@@ -193,13 +132,80 @@ def get_team_winrates(win_rates, games):
     
     return team_wr
 
+# predict win probability for home team for a single game state
+def predict(model, features):
+    prob = model.predict_proba(features)[0]
+    return prob[1]
+
+# poll live games every 30 seconds
+def run(poll_interval=30):
+    print("Loading model...")
+    model = load_model()
+
+    print("Loading team win rates...")
+    win_rates = compute_winrates()
+
+    # build simple lookup: game_id -> (home_win_rate, away_win_rate)
+    conn = get_connection()
+    games_df = pd.read_sql_query("SELECT game_id, game_date, home_team, away_team FROM games", conn)
+    conn.close()
+
+    team_wr = get_team_winrates(win_rates, games_df)
+
+    print("Fetching today's games...")
+    games = get_todays_games()
+
+    if not games:
+        return
+
+    print(f"\nFound {len(games)} games today:")
+    for game in games:
+        print(f"{game['away_team']} @ {game['home_team']} — {game['status']}")
+
+    print(f"\nPolling every {poll_interval}s. Press Ctrl+C to stop.\n")
+
+    while True:
+        for game in games:
+            game_id = game["game_id"]
+            home_team = game["home_team"]
+            away_team = game["away_team"]
+
+            state = get_live_game_state(game_id)
+            if state is None:
+                print(f"{away_team} @ {home_team}: no live data yet")
+                continue
+
+            # default to 0.5 win rate if game not in historical data
+            home_wr = team_wr.get(home_team, 0.5)
+            away_wr = team_wr.get(away_team, 0.5)
+
+            feats = build_features(state, home_wr, away_wr)
+            home_win_prob = predict(model, feats)
+            score_prediction = predict_score(state, home_team, away_team)
+
+            q = state["quarter"]
+            t = state["time_remaining_secs"]
+            mins = int(t // 60)
+            secs = int(t % 60)
+
+            print(
+                f"{away_team} {state['away_score']} @ "
+                f"{home_team} {state['home_score']} | "
+                f"Q{q} {mins}:{secs:02d} | "
+                f"Home win prob: {home_win_prob:.1%}"
+                f"Projected final score: {away_team} {score_prediction['away_projected']} - {home_team} {score_prediction['home_projected']}"
+            )
+
+        print()
+        time.sleep(poll_interval)
+
 # simulate a game for when there are no current games
 def test_prediction(home_team, away_team, quarter, time_remaining_secs, home_score, away_score, model, team_wr):
     home_wr = team_wr.get(home_team, 0.5)
     away_wr = team_wr.get(away_team, 0.5)
 
-    print(f"  {home_team} win rate: {home_wr:.3f}")
-    print(f"  {away_team} win rate: {away_wr:.3f}")
+    print(f"{home_team} win rate: {home_wr:.3f}")
+    print(f"{away_team} win rate: {away_wr:.3f}")
 
     state = {
         "quarter": quarter,
@@ -211,13 +217,15 @@ def test_prediction(home_team, away_team, quarter, time_remaining_secs, home_sco
 
     features = build_features(state, home_wr, away_wr)
     home_win_prob = predict(model, features)
+    score_prediction = predict_score(state, home_team, away_team)
 
     mins = int(time_remaining_secs // 60)
     secs = int(time_remaining_secs % 60)
 
-    print(f"  {away_team} {away_score} @ {home_team} {home_score} | Q{quarter} {mins}:{secs:02d}")
-    print(f"  Home win probability: {home_win_prob:.1%}")
-    print(f"  Away win probability: {1 - home_win_prob:.1%}\n")
+    print(f"{away_team} {away_score} @ {home_team} {home_score} | Q{quarter} {mins}:{secs:02d}")
+    print(f"Home win probability: {home_win_prob:.1%}")
+    print(f"Away win probability: {1 - home_win_prob:.1%}")
+    print(f"Projected final score: {away_team} {score_prediction['away_projected']} - {home_team} {score_prediction['home_projected']}\n")
 
 if __name__ == "__main__":
     model = load_model()
@@ -260,5 +268,4 @@ if __name__ == "__main__":
         team_wr=team_wr
     )
 
-# if __name__ == "__main__":
-#     run()
+    run()

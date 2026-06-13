@@ -11,7 +11,7 @@ def fetch_and_store_games(season="2025-26", season_type="Regular Season"):
     gamefinder = leaguegamefinder.LeagueGameFinder(
         season_nullable=season,
         season_type_nullable=season_type,
-        league_id_nullable="00"  # 00 = NBA
+        league_id_nullable="00# 00 = NBA
     )
 
     df = gamefinder.get_data_frames()[0]

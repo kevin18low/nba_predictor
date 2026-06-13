@@ -142,8 +142,8 @@ def train(df):
     print("\nTraining Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
     gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1, params={"sample_weight": w_train})
-    print(f"  CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
-    print(f"  CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} ± {gb_cv['test_neg_log_loss'].std():.4f}")
+    print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
+    print(f"CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} ± {gb_cv['test_neg_log_loss'].std():.4f}")
 
     print("\nFitting on full training set.")
     gb.fit(X_train, y_train, sample_weight=w_train)
@@ -151,8 +151,8 @@ def train(df):
     final_ll = log_loss(y_test, gb.predict_proba(X_test))
 
     print(f"\nFinal Test Scores:")
-    print(f"  Accuracy:  {final_acc:.4f}")
-    print(f"  Log Loss:  {final_ll:.4f}")
+    print(f"Accuracy: {final_acc:.4f}")
+    print(f"Log Loss: {final_ll:.4f}")
 
     with open("models/win_prob_model.pkl", "wb") as f:
         pickle.dump(gb, f)

@@ -104,7 +104,7 @@ def process_games(limit=None):
         home_win = game["home_win"]
 
         rows = get_play_by_play(game_id, home_win)
-        print(f"  [{i+1}/{len(games)}] {game_id}: {rows} states stored")
+        print(f"[{i+1}/{len(games)}] {game_id}: {rows} states stored")
         time.sleep(0.2)
 
 if __name__ == "__main__":
