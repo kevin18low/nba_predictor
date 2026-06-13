@@ -192,7 +192,7 @@ def run(poll_interval=30):
                 f"{away_team} {state['away_score']} @ "
                 f"{home_team} {state['home_score']} | "
                 f"Q{q} {mins}:{secs:02d} | "
-                f"Home win prob: {home_win_prob:.1%}"
+                f"Home win prob: {home_win_prob:.1%} | "
                 f"Projected final score: {away_team} {score_prediction['away_projected']} - {home_team} {score_prediction['home_projected']}"
             )
 

@@ -37,6 +37,7 @@ def init_db():
             score_diff          INTEGER,
             home_win            INTEGER,
             player_name         TEXT,
+            person_id           INTEGER,
             action_type         TEXT,
             shot_result         TEXT,
             x                   REAL,
@@ -52,12 +53,17 @@ def init_db():
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_game_states_player
-        ON game_states(player_name)
+        ON game_states(person_id)
     """)
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_game_states_shot
         ON game_states(shot_result)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_game_states_shot_player
+        ON game_states(person_id, shot_result)
     """)
 
     conn.commit()

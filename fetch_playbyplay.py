@@ -45,6 +45,7 @@ def get_play_by_play(game_id, home_win):
 
             # columns may be empty for non-shot events
             player_name  = row.get("playerName") or None
+            person_id = int(row["personId"]) if row.get("personId") not in (None, "") else None
             action_type  = row.get("actionType") or None
             shot_result  = row.get("shotResult") or None
             x = float(row["xLegacy"]) if row.get("xLegacy") not in (None, "") else None
@@ -53,9 +54,9 @@ def get_play_by_play(game_id, home_win):
 
             cursor.execute("""
                 INSERT INTO game_states 
-                (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, action_type, shot_result, x, y, shot_distance)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
+                (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, person_id, action_type, shot_result, x, y, shot_distance)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, ( 
                 game_id,
                 quarter,
                 time_remaining_secs,
@@ -64,6 +65,7 @@ def get_play_by_play(game_id, home_win):
                 score_diff,
                 home_win,
                 player_name,
+                person_id,
                 action_type,
                 shot_result,
                 x,
