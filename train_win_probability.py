@@ -139,7 +139,7 @@ def train(df):
 
     scoring = ["accuracy", "neg_log_loss"]
 
-    print("\nTraining Gradient Boosting.")
+    print("\nTraining Win Probability Model With Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
     gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1, params={"sample_weight": w_train})
     print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
