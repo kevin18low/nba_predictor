@@ -4,7 +4,8 @@ import pandas as pd
 from train_win_probability import compute_winrates
 from db import get_connection
 from predict_score import predict_score
-from live_data import get_live_scoreboard, get_live_playbyplay, get_live_game_states
+from predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
+from live_data import get_live_scoreboard, get_live_playbyplay, get_live_game_states, get_new_shot_events
 
 # load saved model
 def load_model():
@@ -31,11 +32,10 @@ def get_todays_games():
 
     return games
 
-# get the current game state from live play by play
-def get_live_game_state(game_id):
+# fetch all live actions for a game; returns None on error
+def fetch_actions(game_id):
     try:
-        actions = get_live_playbyplay(game_id)
-        return get_live_game_states(actions)
+        return get_live_playbyplay(game_id)
     except Exception as e:
         print(f"Error fetching game {game_id}: {e}")
         return None
@@ -94,8 +94,13 @@ def predict(model, features):
 
 # poll live games every 30 seconds
 def run(poll_interval=30):
-    print("Loading model...")
+    print("Loading win probability model...")
     model = load_model()
+
+    print("Loading shot model...")
+    shot_model = load_shot_model()
+    le_zone, le_area, le_action = load_encoders()
+    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = load_player_stats()
 
     print("Loading team win rates...")
     win_rates = compute_winrates()
@@ -118,16 +123,65 @@ def run(poll_interval=30):
 
     print(f"\nPolling every {poll_interval}s. Press Ctrl+C to stop.\n")
 
+    # per-game shot tracking: seen action numbers + per-player in-game shooting state
+    shot_state = {}
+
     while True:
         for game in games:
             game_id = game["game_id"]
             home_team = game["home_team"]
             away_team = game["away_team"]
 
-            state = get_live_game_state(game_id)
+            actions = fetch_actions(game_id)
+            if actions is None:
+                continue
+
+            state = get_live_game_states(actions)
             if state is None:
                 print(f"{away_team} @ {home_team}: no live data yet")
                 continue
+
+            # initialise per-game state on first sight
+            if game_id not in shot_state:
+                shot_state[game_id] = {"seen": set(), "players": {}}
+
+            gs = shot_state[game_id]
+            new_shots = get_new_shot_events(actions, gs["seen"])
+
+            for shot in new_shots:
+                gs["seen"].add(shot["action_number"])
+
+                pid = shot["person_id"]
+                ps = gs["players"].setdefault(pid, {"count": 0, "made": 0, "last3": []})
+
+                # capture in-game context *before* this shot
+                shots_taken = ps["count"]
+                fg_pct_tonight = ps["made"] / ps["count"] if ps["count"] > 0 else 0.45
+                hot_hand = sum(ps["last3"])
+
+                if shot["x"] is not None and shot["y"] is not None and shot["shot_distance"] is not None:
+                    prob = predict_shot_probability(
+                        shot_model, le_zone, le_area, le_action,
+                        player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs,
+                        player_id=pid,
+                        x=shot["x"], y=shot["y"],
+                        shot_distance=shot["shot_distance"],
+                        action_type=shot["action_type"] or "Jump Shot",
+                        shots_taken=shots_taken,
+                        fg_pct_tonight=fg_pct_tonight,
+                        hot_hand=hot_hand
+                    )
+                    made = shot["shot_result"] == "Made"
+                    result_str = "MADE" if made else "missed"
+                    print(f"  {shot['player_name']}: {shot['action_type']} ({shot['shot_distance']}ft) — {prob:.1%} → {result_str}")
+
+                # update rolling state
+                made_int = 1 if shot["shot_result"] == "Made" else 0
+                ps["count"] += 1
+                ps["made"] += made_int
+                ps["last3"].append(made_int)
+                if len(ps["last3"]) > 3:
+                    ps["last3"].pop(0)
 
             home_wr = team_wr.get(home_team, 0.5)
             away_wr = team_wr.get(away_team, 0.5)

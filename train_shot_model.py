@@ -171,7 +171,6 @@ def engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_
 
     df["player_zone_fg_pct"] = df.apply(get_zone_fg_pct, axis=1)
 
-    # fit encoders on training data
     if le_zone is None:
         le_zone = LabelEncoder()
         df["zone_enc"] = le_zone.fit_transform(df["shot_zone"].fillna("Unknown"))
