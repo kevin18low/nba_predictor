@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="index-container">
+    <h1 class="index-title">Today's Games</h1>
+
+    {% if games %}
+    <div class="game-cards">
+        {% for game in games %}
+        <div class="game-card">
+            <div class="game-card-teams">
+                <div class="game-card-team">
+                    <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.away_team | espn_logo }}.png"
+                         alt="{{ game.away_team }}" class="game-card-logo">
+                    <span class="game-card-tricode">{{ game.away_team }}</span>
+                </div>
+                <span class="game-card-at">@</span>
+                <div class="game-card-team">
+                    <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.home_team | espn_logo }}.png"
+                         alt="{{ game.home_team }}" class="game-card-logo">
+                    <span class="game-card-tricode">{{ game.home_team }}</span>
+                </div>
+            </div>
+
+            <p class="game-card-status">{{ game.status }}</p>
+
+            <div class="game-card-links">
+                <a href="{{ url_for('scoreboard', game_id=game.game_id) }}" class="btn">Scoreboard</a>
+                <a href="{{ url_for('court', game_id=game.game_id) }}" class="btn btn-secondary">Court</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <p class="no-games">No live games today.</p>
+    {% endif %}
+
+    <!-- Featured historical games for replay -->
+    <h2 class="index-section-title">Featured Games</h2>
+    <p class="index-section-sub">Relive recent games, step through each shot, and watch the win probability shift.</p>
+    <div class="game-cards">
+        {% for game in featured %}
+        <div class="game-card">
+            <div class="game-card-teams">
+                <div class="game-card-team">
+                    <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.away_team | espn_logo }}.png"
+                         alt="{{ game.away_team }}" class="game-card-logo">
+                    <span class="game-card-tricode">{{ game.away_team }}</span>
+                </div>
+                <span class="game-card-at">@</span>
+                <div class="game-card-team">
+                    <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.home_team | espn_logo }}.png"
+                         alt="{{ game.home_team }}" class="game-card-logo">
+                    <span class="game-card-tricode">{{ game.home_team }}</span>
+                </div>
+            </div>
+            <p class="game-card-status">{{ game.game_date }}</p>
+            <div class="game-card-links">
+                <a href="{{ url_for('replay', game_id=game.game_id) }}" class="btn">Replay</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,519 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #111;
+    color: #fff;
+    font-family: "Bebas Neue", sans-serif;
+    font-size: x-large;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* --- Navbar --- */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 24px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+}
+
+.nav-brand {
+    font-size: 32px;
+    font-weight: 700;
+    color: #f90;
+    white-space: nowrap;
+}
+
+.nav-games {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.nav-game {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.nav-game:hover {
+    border-color: #555;
+}
+
+.nav-game.active {
+    border-color: #f90;
+}
+
+.nav-logo {
+    height: 32px;
+    width: 32px;
+    object-fit: contain;
+}
+
+.nav-vs {
+    font-size: 12px;
+    color: #888;
+}
+
+/* --- Page layout --- */
+
+.page-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 24px;
+}
+
+/* --- Tabs --- */
+
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #333;
+}
+
+.tab {
+    padding: 10px 24px;
+    font-size: 14px;
+    color: #888;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+    color: #fff;
+}
+
+.tab.active {
+    color: #fff;
+    border-bottom-color: #f90;
+}
+
+/* --- Scoreboard --- */
+
+.scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.team-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.team-name {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.team-score {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.game-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.clock {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ccc;
+}
+
+/* --- Win probability bar --- */
+
+.win-prob-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.win-prob-bar {
+    display: flex;
+    flex: 1;
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.win-prob-away {
+    background: #4a90d9;
+    width: 50%;
+    transition: width 0.6s ease;
+}
+
+.win-prob-home {
+    background: #e05c5c;
+    width: 50%;
+    transition: width 0.6s ease;
+}
+
+.win-prob-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ccc;
+    min-width: 44px;
+    text-align: center;
+}
+
+/* --- Score projection --- */
+
+.projection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.projection-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666;
+}
+
+.projection-score {
+    font-size: 18px;
+    color: #ccc;
+}
+
+.waiting {
+    text-align: center;
+    color: #666;
+    margin-top: 80px;
+    font-size: 16px;
+}
+
+/* --- Index page --- */
+
+.index-container {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 0 24px;
+}
+
+.index-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 32px;
+}
+
+.game-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.game-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 24px;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.2s;
+}
+
+.game-card:hover {
+    border-color: #444;
+}
+
+.game-card-teams {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.game-card-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.game-card-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.game-card-tricode {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #ccc;
+}
+
+.game-card-at {
+    font-size: 20px;
+    color: #555;
+    padding-bottom: 20px;
+}
+
+.game-card-status {
+    font-size: 16px;
+    color: #888;
+}
+
+.game-card-links {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    background: #72E246;
+    color: #111;
+    transition: opacity 0.2s;
+}
+
+.btn:hover {
+    opacity: 0.85;
+}
+
+.btn-secondary {
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #444;
+}
+
+.no-games {
+    color: #666;
+    font-size: 18px;
+    margin-bottom: 48px;
+}
+
+.index-section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    margin-top: 48px;
+}
+
+.index-section-sub {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+/* --- Replay page --- */
+
+.replay-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 28px;
+}
+
+.replay-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.replay-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.replay-team {
+    letter-spacing: 1px;
+}
+
+.replay-at {
+    color: #555;
+    font-size: 20px;
+}
+
+.replay-date {
+    font-size: 16px;
+    color: #666;
+}
+
+.replay-loading {
+    text-align: center;
+    color: #666;
+    margin: 60px 0;
+    font-size: 15px;
+}
+
+.replay-scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 16px 24px;
+    background: #1a1a1a;
+    border-radius: 10px;
+}
+
+.replay-score-block {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.replay-tricode {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #aaa;
+}
+
+.replay-score {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.replay-middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.replay-clock {
+    font-size: 20px;
+    font-weight: 600;
+    color: #aaa;
+}
+
+.replay-shot-info {
+    text-align: center;
+    font-size: 20px;
+    color: #aaa;
+    margin-bottom: 16px;
+    min-height: 20px;
+}
+
+.replay-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0 28px;
+}
+
+.replay-btn {
+    padding: 10px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    background: #72E246;
+    color: #111;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.replay-btn:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.replay-btn:disabled {
+    background: #2a2a2a;
+    color: #555;
+    cursor: default;
+}
+
+.replay-counter {
+    font-size: 14px;
+    color: #666;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* --- Court --- */
+
+.court-wrapper {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto 24px;
+}
+
+#court-svg {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+}
+
+.tooltip {
+    display: none;
+    position: fixed;
+    background: rgba(0, 0, 0, 0.88);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    pointer-events: none;
+    z-index: 100;
+    border: 1px solid #444;
+}
+
+.court-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 16px;
+    color: #888;
+}
+
+.court-line {
+    stroke: #3d3d3d;
+    fill: none;
+    stroke-width: 2;
+}

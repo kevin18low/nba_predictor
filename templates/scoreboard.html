@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+
+    <!-- Tab switcher -->
+    <div class="tabs">
+        <a href="{{ url_for('scoreboard', game_id=game_id) }}" class="tab active">Scoreboard</a>
+        <a href="{{ url_for('court', game_id=game_id) }}" class="tab">Court</a>
+    </div>
+
+    {% if data.game_state %}
+    {% set state = data.game_state %}
+    {% set pred = data.score_prediction %}
+
+    <!-- Teams + scores -->
+    <div class="scoreboard">
+        <div class="team away">
+            <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ data.away_team | espn_logo }}.png"
+                 alt="{{ data.away_team }}" class="team-logo">
+            <span class="team-name">{{ data.away_team }}</span>
+            <span class="team-score" id="away-score">{{ state.away_score }}</span>
+        </div>
+
+        <div class="game-info">
+            <span class="clock" id="clock">
+                Q{{ state.quarter }}
+                &nbsp;
+                {{ (state.time_remaining_secs // 60)|int }}:{{ "%02d"|format((state.time_remaining_secs % 60)|int) }}
+            </span>
+        </div>
+
+        <div class="team home">
+            <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ data.home_team | espn_logo }}.png"
+                 alt="{{ data.home_team }}" class="team-logo">
+            <span class="team-name">{{ data.home_team }}</span>
+            <span class="team-score" id="home-score">{{ state.home_score }}</span>
+        </div>
+    </div>
+
+    <!-- Win probability bar -->
+    <div class="win-prob-section">
+        <span class="win-prob-label" id="away-win-prob-label">
+            {{ '%.1f'|format((1 - data.home_win_prob) * 100) }}%
+        </span>
+        <div class="win-prob-bar">
+            <div class="win-prob-away" id="win-prob-away"></div>
+            <div class="win-prob-home" id="win-prob-home"></div>
+        </div>
+        <span class="win-prob-label" id="home-win-prob-label">
+            {{ '%.1f'|format(data.home_win_prob * 100) }}%
+        </span>
+    </div>
+
+    <!-- Score projection -->
+    {% if pred %}
+    <div class="projection">
+        <span class="projection-label">Projected final</span>
+        <span class="projection-score" id="projection">
+            {{ data.away_team }} <strong id="away-projected">{{ pred.away_projected }}</strong>
+            &nbsp;—&nbsp;
+            {{ data.home_team }} <strong id="home-projected">{{ pred.home_projected }}</strong>
+        </span>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="waiting">Waiting for live data...</p>
+    {% endif %}
+
+</div>
+
+<script src="{{ url_for('static', filename='js/scoreboard.js') }}"></script>
+{% endblock %}

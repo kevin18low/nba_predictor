@@ -1,0 +1,35 @@
+<svg id="court-svg" viewBox="0 0 500 470" xmlns="http://www.w3.org/2000/svg">
+    <!-- Court surface -->
+    <rect x="0" y="0" width="500" height="470" fill="#eec36d"/>
+    <!-- Boundary / half-court line at top, baseline at bottom edge -->
+    <rect class="court-line" x="0" y="0" width="500" height="470"/>
+    <line class="court-line" x1="0" y1="0" x2="500" y2="0"/>
+
+    <!-- Paint: FT line y=150 -> svgY=300, baseline at SVG bottom (470) -->
+    <rect class="court-line" x="170" y="300" width="160" height="170"/>
+
+    <!-- Free throw circle: center (250,300), r=60 -->
+    <path class="court-line" d="M 190 300 A 60 60 0 0 1 310 300"/>
+    <path class="court-line" d="M 190 300 A 60 60 0 0 0 310 300" stroke-dasharray="8 6"/>
+
+    <!-- Restricted area: center at basket (250,450), r=40, arcing toward mid-court -->
+    <path class="court-line" d="M 210 450 A 40 40 0 0 1 290 450"/>
+
+    <!-- Backboard: behind basket toward baseline -->
+    <line x1="220" y1="465" x2="280" y2="465" stroke="white" stroke-width="3"/>
+
+    <!-- Basket: y=0 -> svgY=450 -->
+    <circle cx="250" cy="450" r="10" fill="none" stroke="red" stroke-width="2"/>
+
+    <!-- Corner 3pt lines: arc start y=89.5 -> svgY=361 -->
+    <line class="court-line" x1="30" y1="470" x2="30" y2="361"/>
+    <line class="court-line" x1="470" y1="470" x2="470" y2="361"/>
+
+    <!-- 3pt arc: center (250,450), r=237.5 -->
+    <path class="court-line" d="M 30 361 A 237.5 237.5 0 0 1 470 361"/>
+
+    <!-- Center circle at half court (svgY=0) -->
+    <circle class="court-line" cx="250" cy="0" r="60"/>
+
+    <g id="shots-layer"></g>
+</svg>
