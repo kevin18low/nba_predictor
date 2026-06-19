@@ -54,6 +54,7 @@ def get_play_by_play(game_id, home_win, conn):
 
             player_name = row.get("playerName") or None
             person_id = int(row["personId"]) if row.get("personId") not in (None, "") else None
+            team_tricode = row.get("teamTricode") or None
             action_type = row.get("actionType") or None
             shot_result = row.get("shotResult") or None
             x = float(row["xLegacy"]) if row.get("xLegacy") not in (None, "") else None
@@ -63,7 +64,7 @@ def get_play_by_play(game_id, home_win, conn):
             rows_to_insert.append((
                 game_id, quarter, time_remaining_secs,
                 home_score, away_score, score_diff, home_win,
-                player_name, person_id, action_type, shot_result,
+                player_name, person_id, team_tricode, action_type, shot_result,
                 x, y, shot_distance
             ))
         except Exception as e:
@@ -74,9 +75,9 @@ def get_play_by_play(game_id, home_win, conn):
 
     cursor = conn.cursor()
     cursor.executemany("""
-        INSERT INTO game_states 
-        (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, person_id, action_type, shot_result, x, y, shot_distance)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO game_states
+        (game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win, player_name, person_id, team_tricode, action_type, shot_result, x, y, shot_distance)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows_to_insert)
     conn.commit()
     

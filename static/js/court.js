@@ -29,17 +29,33 @@ const tooltip = document.getElementById("tooltip");
 
 function drawDot(shot, highlight) {
     const [sx, sy] = toSvg(shot.x, shot.y);
-    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", sx);
-    c.setAttribute("cy", sy);
-    c.setAttribute("r", highlight ? 9 : 6);
-    c.setAttribute("fill", probToColour(shot.probability));
-    c.setAttribute("stroke", shot.shot_result === "Made" ? "white" : "rgba(0,0,0,0.35)");
-    c.setAttribute("stroke-width", shot.shot_result === "Made" ? 2 : 1);
-    c.setAttribute("opacity", highlight ? 1.0 : 0.6);
-    c.style.cursor = "pointer";
+    const r = highlight ? 9 : 6;
+    const fill   = probToColour(shot.probability);
+    const stroke = shot.shot_result === "Made" ? "#70E32B" : "#FF2B0F";
+    const strokeW = shot.shot_result === "Made" ? 2 : 1;
+    const opacity = highlight ? 1.0 : 0.8;
 
-    c.addEventListener("mouseover", () => {
+    const isHome = shot.team_tricode === HOME_TEAM;
+    let el;
+
+    if (isHome) {
+        el = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        el.setAttribute("cx", sx);
+        el.setAttribute("cy", sy);
+        el.setAttribute("r", r);
+    } else {
+        // Diamond (rotated square) for away team
+        el = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        el.setAttribute("points", `${sx},${sy-r} ${sx+r},${sy} ${sx},${sy+r} ${sx-r},${sy}`);
+    }
+
+    el.setAttribute("fill", fill);
+    el.setAttribute("stroke", stroke);
+    el.setAttribute("stroke-width", strokeW);
+    el.setAttribute("opacity", opacity);
+    el.style.cursor = "pointer";
+
+    el.addEventListener("mouseover", () => {
         tooltip.style.display = "block";
         tooltip.innerHTML = `
             <strong>${shot.player_name}</strong><br>
@@ -47,12 +63,12 @@ function drawDot(shot, highlight) {
             Predicted: ${Math.round(shot.probability * 100)}%<br>
             <em>${shot.shot_result}</em>`;
     });
-    c.addEventListener("mousemove", e => {
+    el.addEventListener("mousemove", e => {
         tooltip.style.left = (e.pageX + 14) + "px";
         tooltip.style.top  = (e.pageY - 36) + "px";
     });
-    c.addEventListener("mouseout", () => tooltip.style.display = "none");
-    layer.appendChild(c);
+    el.addEventListener("mouseout", () => tooltip.style.display = "none");
+    layer.appendChild(el);
 }
 
 function dimLast() {

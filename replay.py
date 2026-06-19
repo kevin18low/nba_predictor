@@ -74,7 +74,7 @@ def build_replay(game_id, home_team, away_team):
 
     conn = get_connection()
     events = pd.read_sql_query("""
-        SELECT quarter, time_remaining_secs, home_score, away_score, person_id, player_name, shot_result, x, y, shot_distance
+        SELECT quarter, time_remaining_secs, home_score, away_score, person_id, player_name, team_tricode, shot_result, x, y, shot_distance
         FROM game_states
         WHERE game_id = ?
         AND shot_result IS NOT NULL
@@ -139,6 +139,7 @@ def build_replay(game_id, home_team, away_team):
             "home_win_prob": win_prob,
             "away_win_prob": round(1 - win_prob, 4),
             "player_name": row["player_name"],
+            "team_tricode": row.get("team_tricode"),
             "person_id": pid,
             "x": float(row["x"]),
             "y": float(row["y"]),

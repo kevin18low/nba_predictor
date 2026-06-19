@@ -38,6 +38,7 @@ def init_db():
             home_win            INTEGER,
             player_name         TEXT,
             person_id           INTEGER,
+            team_tricode        TEXT,
             action_type         TEXT,
             shot_result         TEXT,
             x                   REAL,

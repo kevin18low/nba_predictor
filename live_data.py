@@ -48,6 +48,7 @@ def get_new_shot_events(actions, seen_action_numbers):
                 "action_number": action["actionNumber"],
                 "person_id": action.get("personId"),
                 "player_name": action.get("playerNameI") or action.get("playerName"),
+                "team_tricode": action.get("teamTricode"),
                 "x": action.get("xLegacy"),
                 "y": action.get("yLegacy"),
                 "shot_distance": action.get("shotDistance"),
