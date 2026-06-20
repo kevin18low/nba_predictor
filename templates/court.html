@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-container">
+<div class="court-page">
 
     <div class="replay-header">
         <div class="replay-title">
@@ -45,17 +45,25 @@
             <span class="win-prob-label" id="home-prob-label">50.0%</span>
         </div>
 
-        <div class="replay-shot-info" id="shot-info">&nbsp;</div>
+        <div class="court-chart-row">
+            <div class="court-col">
+                <div class="replay-shot-info" id="shot-info">&nbsp;</div>
+                <div class="court-wrapper">
+                    <div id="tooltip" class="tooltip"></div>
+                    {% include "partials/court_svg.html" %}
+                </div>
+                <div class="replay-controls">
+                    <button id="btn-prev" class="replay-btn" disabled>&#8592; Prev</button>
+                    <span class="replay-counter" id="counter">0 / 0</span>
+                    <button id="btn-next" class="replay-btn" disabled>Next &#8594;</button>
+                </div>
+            </div>
 
-        <div class="court-wrapper">
-            <div id="tooltip" class="tooltip"></div>
-            {% include "partials/court_svg.html" %}
-        </div>
-
-        <div class="replay-controls">
-            <button id="btn-prev" class="replay-btn" disabled>&#8592; Prev</button>
-            <span class="replay-counter" id="counter">0 / 0</span>
-            <button id="btn-next" class="replay-btn" disabled>Next &#8594;</button>
+            <div class="chart-col">
+                <div class="prob-chart-wrapper">
+                    <svg id="prob-chart" viewBox="0 0 400 300"></svg>
+                </div>
+            </div>
         </div>
 
         <div class="court-legend">

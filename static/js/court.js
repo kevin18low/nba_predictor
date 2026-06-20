@@ -5,6 +5,81 @@ let shots   = [];   // all normalized shot events
 let current = -1;   // index of last rendered shot
 let atLive  = true; // auto-advance when new live shots arrive
 
+// Win probability chart
+const CW = 400, CH = 300;
+const CP = { t: 20, r: 12, b: 28, l: 12 };
+const IW = CW - CP.l - CP.r;
+const IH = CH - CP.t - CP.b;
+
+function gameElapsed(quarter, secs) {
+    if (quarter <= 4) return (quarter - 1) * 720 + (720 - secs);
+    return 2880 + (quarter - 5) * 300 + (300 - secs);
+}
+
+function toChartX(elapsed) { return CP.l + (elapsed / 2880) * IW; }
+function toChartY(prob)    { return CP.t + (1 - prob) * IH; }
+
+function drawChart(points, cursorIdx) {
+    const svg = document.getElementById("prob-chart");
+    if (!svg || points.length === 0) return;
+
+    const midY = toChartY(0.5);
+    let html = '';
+
+    // Quarter dividers
+    for (let q = 1; q <= 3; q++) {
+        const x = toChartX(q * 720).toFixed(1);
+        html += `<line x1="${x}" y1="${CP.t}" x2="${x}" y2="${CP.t + IH}" stroke="#333" stroke-width="1"/>`;
+    }
+
+    // Quarter labels
+    for (let q = 1; q <= 4; q++) {
+        const x = toChartX((q - 0.5) * 720).toFixed(1);
+        html += `<text x="${x}" y="${CH - 6}" text-anchor="middle" fill="#ccc" font-size="12" font-family="sans-serif">Q${q}</text>`;
+    }
+
+    // 50% midline
+    html += `<line x1="${CP.l}" y1="${midY.toFixed(1)}" x2="${CW - CP.r}" y2="${midY.toFixed(1)}" stroke="#333" stroke-width="1"/>`;
+    html += `<text x="${CP.l + 4}" y="${midY - 4}" fill="#ccc" font-size="12" font-family="sans-serif">50%</text>`;
+
+    // Team labels
+    html += `<text x="${CW - CP.r - 4}" y="${CP.t + 12}" text-anchor="end" fill="#ccc" font-size="12" font-family="sans-serif">${HOME_TEAM}</text>`;
+    html += `<text x="${CW - CP.r - 4}" y="${CP.t + IH - 2}" text-anchor="end" fill="#ccc" font-size="12" font-family="sans-serif">${AWAY_TEAM}</text>`;
+
+    // Build coordinate strings
+    const ptStrs  = points.map(p => `${toChartX(p.elapsed).toFixed(1)},${toChartY(p.prob).toFixed(1)}`);
+    const firstX  = toChartX(points[0].elapsed).toFixed(1);
+    const lastX   = toChartX(points[points.length - 1].elapsed).toFixed(1);
+    const midYStr = midY.toFixed(1);
+    const areaPoints = `${firstX},${midYStr} ${ptStrs.join(' ')} ${lastX},${midYStr}`;
+
+    // Above midline = green, below midline = red
+    const aboveH = (midY - CP.t).toFixed(1);
+    const belowH = (CP.t + IH - midY).toFixed(1);
+    html += `<defs>
+        <clipPath id="clip-above"><rect x="${CP.l}" y="${CP.t}" width="${IW}" height="${aboveH}"/></clipPath>
+        <clipPath id="clip-below"><rect x="${CP.l}" y="${midYStr}" width="${IW}" height="${belowH}"/></clipPath>
+    </defs>`;
+    html += `<polygon points="${areaPoints}" fill="#4caf50" opacity="0.25" clip-path="url(#clip-above)"/>`;
+    html += `<polygon points="${areaPoints}" fill="#e05c5c" opacity="0.25" clip-path="url(#clip-below)"/>`;
+
+    // Probability line
+    html += `<polyline points="${ptStrs.join(' ')}" fill="none" stroke="#f90" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+    // Cursor
+    if (cursorIdx >= 0 && cursorIdx < points.length) {
+        const cp = points[cursorIdx];
+        const cx = toChartX(cp.elapsed).toFixed(1);
+        const cy = toChartY(cp.prob).toFixed(1);
+        html += `<line x1="${cx}" y1="${CP.t}" x2="${cx}" y2="${CP.t + IH}" stroke="#555" stroke-width="1" stroke-dasharray="3,2"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="#f90" stroke-width="2"/>`;
+    }
+
+    svg.innerHTML = html;
+}
+
+const liveWinHistory = []; // {elapsed, prob} — built by pollLiveState in live mode
+
 // Coordinate mapping
 function toSvg(x, y) { return [x + 250, 450 - y]; }
 
@@ -132,9 +207,15 @@ function updateUI() {
             ` &nbsp;|&nbsp; Predicted: <strong>${prob}%</strong> &nbsp;|&nbsp; ${result}`;
     }
 
-    if (PAGE_MODE === "replay" && shot)
+    if (PAGE_MODE === "replay" && shot) {
         updateScoreboard(shot.home_score, shot.away_score, shot.quarter,
                          shot.time_remaining_secs, shot.home_win_prob, shot.away_win_prob);
+
+        const chartPts = shots.slice(0, current + 1)
+            .filter(s => s.quarter != null && s.time_remaining_secs != null && s.home_win_prob != null)
+            .map(s => ({ elapsed: gameElapsed(s.quarter, s.time_remaining_secs), prob: s.home_win_prob }));
+        drawChart(chartPts, chartPts.length - 1);
+    }
 }
 
 // Data normalization
@@ -192,6 +273,14 @@ async function pollLiveState() {
         const d = await res.json();
         updateScoreboard(d.home_score, d.away_score, d.quarter,
                          d.time_remaining_secs, d.home_win_prob, d.away_win_prob);
+
+        if (d.quarter != null && d.time_remaining_secs != null && d.home_win_prob != null) {
+            liveWinHistory.push({
+                elapsed: gameElapsed(d.quarter, d.time_remaining_secs),
+                prob: d.home_win_prob,
+            });
+            drawChart(liveWinHistory, liveWinHistory.length - 1);
+        }
     } catch (_) {}
 }
 

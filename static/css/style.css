@@ -183,7 +183,7 @@ a {
 }
 
 .win-prob-label {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: #ccc;
     min-width: 44px;
@@ -425,7 +425,7 @@ a {
 
 .replay-shot-info {
     text-align: center;
-    font-size: 20px;
+    font-size: 16px;
     color: #aaa;
     margin-bottom: 16px;
     min-height: 20px;
@@ -462,7 +462,7 @@ a {
 }
 
 .replay-counter {
-    font-size: 14px;
+    font-size: 16px;
     color: #666;
     min-width: 80px;
     text-align: center;
@@ -516,4 +516,47 @@ a {
     stroke: #3d3d3d;
     fill: none;
     stroke-width: 2;
+}
+
+/* --- Court page --- */
+
+.court-page {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 24px;
+}
+
+.court-chart-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.court-col {
+    flex: 0 0 440px;
+}
+
+.court-col .court-wrapper {
+    max-width: none;
+    margin: 0;
+}
+
+.chart-col {
+    flex: 1;
+    min-width: 0;
+}
+
+/* --- Win probability chart --- */
+
+.prob-chart-wrapper {
+    background: #161616;
+    border-radius: 8px;
+    padding: 4px 0;
+}
+
+#prob-chart {
+    width: 100%;
+    height: auto;
+    display: block;
 }
