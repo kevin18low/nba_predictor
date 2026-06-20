@@ -3,7 +3,7 @@ import pickle
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.metrics import log_loss
-from db import get_connection
+from ingestion.db import get_connection
 
 # for each game, compute each team's win rate from all prior games. Captures hot streaks and team stength
 def compute_winrates():

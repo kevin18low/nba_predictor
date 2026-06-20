@@ -1,6 +1,6 @@
 from nba_api.live.nba.endpoints import scoreboard, playbyplay
 from nba_api.live.nba.library.http import NBALiveHTTP
-from fetch_playbyplay import parse_time
+from ingestion.fetch_playbyplay import parse_time
 
 NBALiveHTTP.headers = {
     "Accept": "application/json",

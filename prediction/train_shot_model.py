@@ -4,7 +4,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
-from db import get_connection
+from ingestion.db import get_connection
 
 # load shot data from shot attempts table and game states table
 def load_shot_data():

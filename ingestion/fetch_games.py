@@ -1,6 +1,6 @@
 import time
 from nba_api.stats.endpoints import leaguegamefinder
-from db import get_connection
+from ingestion.db import get_connection
 
 
 # fetch and store all games for a given season in the games table

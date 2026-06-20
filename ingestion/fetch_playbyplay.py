@@ -1,6 +1,6 @@
 import time
 from nba_api.stats.endpoints import playbyplayv3
-from db import get_connection
+from ingestion.db import get_connection
 
 # convert ISO 8601 clock format 'PT05M42.00S' to seconds
 def parse_time(clock_str):

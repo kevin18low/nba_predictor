@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 from nba_api.stats.endpoints import shotchartdetail
-from db import get_connection
+from ingestion.db import get_connection
 
 # fetch all shots taken per player
 def fetch_player_shots(player_id, player_name, season):

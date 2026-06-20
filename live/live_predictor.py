@@ -1,11 +1,11 @@
 import time
 import pickle
 import pandas as pd
-from train_win_probability import compute_winrates
-from db import get_connection
-from predict_score import predict_score
-from predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
-from live_data import get_live_scoreboard, get_live_playbyplay, get_live_game_states, get_new_shot_events
+from prediction.train_win_probability import compute_winrates
+from ingestion.db import get_connection
+from prediction.predict_score import predict_score
+from prediction.predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
+from live.live_data import get_live_scoreboard, get_live_playbyplay, get_live_game_states, get_new_shot_events
 
 # load saved model
 def load_model():

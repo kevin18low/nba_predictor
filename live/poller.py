@@ -1,12 +1,12 @@
 import time
 import threading
 import pandas as pd
-from db import get_connection
-from live_predictor import load_model, build_features, predict, get_team_winrates, get_todays_games, fetch_actions
-from live_data import get_live_game_states, get_new_shot_events
-from predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
-from predict_score import predict_score
-from train_win_probability import compute_winrates
+from ingestion.db import get_connection
+from live.live_predictor import load_model, build_features, predict, get_team_winrates, get_todays_games, fetch_actions
+from live.live_data import get_live_game_states, get_new_shot_events
+from prediction.predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
+from prediction.predict_score import predict_score
+from prediction.train_win_probability import compute_winrates
 from state import app_state, _lock
 
 # live state checking interval in seconds

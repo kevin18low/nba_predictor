@@ -2,8 +2,8 @@ import os
 import copy
 from flask import Flask, jsonify, render_template, abort
 from state import app_state, _lock
-from poller import start_poller
-from replay import build_replay, get_featured_games
+from live.poller import start_poller
+from live.replay import build_replay, get_featured_games
 
 app = Flask(__name__)
 

@@ -1,7 +1,10 @@
-from db import get_connection
-from train_win_probability import compute_winrates
-from live_predictor import load_model, build_features, predict, get_team_winrates
-from predict_score import predict_score
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from ingestion.db import get_connection
+from prediction.train_win_probability import compute_winrates
+from live.live_predictor import load_model, build_features, predict, get_team_winrates
+from prediction.predict_score import predict_score
 import pandas as pd
 
 def test_prediction(home_team, away_team, quarter, time_remaining_secs, home_score, away_score, model, team_wr):

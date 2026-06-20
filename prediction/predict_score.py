@@ -1,5 +1,5 @@
 import pandas as pd
-from db import get_connection
+from ingestion.db import get_connection
 
 # seconds in a full regulation game
 GAME_SECS = 2880

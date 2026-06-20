@@ -1,8 +1,8 @@
 import pandas as pd
-from db import get_connection
-from predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
-from live_predictor import load_model, build_features, predict, get_team_winrates
-from train_win_probability import compute_winrates
+from ingestion.db import get_connection
+from prediction.predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
+from live.live_predictor import load_model, build_features, predict, get_team_winrates
+from prediction.train_win_probability import compute_winrates
 from state import app_state, _lock
 
 _featured_games = None
