@@ -173,7 +173,7 @@ def run(poll_interval=30):
                     )
                     made = shot["shot_result"] == "Made"
                     result_str = "MADE" if made else "missed"
-                    print(f"  {shot['player_name']}: {shot['action_type']} ({shot['shot_distance']}ft) — {prob:.1%} → {result_str}")
+                    print(f"{shot['player_name']}: {shot['action_type']} ({shot['shot_distance']}ft) — {prob:.1%} → {result_str}")
 
                 # update rolling state
                 made_int = 1 if shot["shot_result"] == "Made" else 0

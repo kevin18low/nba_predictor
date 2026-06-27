@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import time
 from nba_api.stats.endpoints import playbyplayv3
 from ingestion.db import get_connection

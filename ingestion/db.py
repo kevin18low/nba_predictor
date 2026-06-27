@@ -68,6 +68,30 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS team_stats (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            season      TEXT,
+            team        TEXT,
+            off_rating  REAL,
+            def_rating  REAL,
+            pace        REAL,
+            UNIQUE(season, team)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS elo_ratings (
+            team    TEXT PRIMARY KEY,
+            elo     REAL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_team_stats_season_team
+        ON team_stats(season, team)
+    """)
+
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_game_states_game_id
         ON game_states(game_id)
     """)
