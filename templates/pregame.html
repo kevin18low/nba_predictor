@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pregame-page">
+    <h1 class="pregame-title">Pre-Game Predictor</h1>
+    <p class="pregame-sub">Select two teams to predict the winner before tip-off.</p>
+
+    <div class="pregame-form">
+        <div class="pregame-team-picker">
+            <div class="picker-group">
+                <label class="picker-label">Away</label>
+                <select id="away-select" class="team-select">
+                    {% for team in teams %}
+                    <option value="{{ team }}">{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <span class="picker-at">@</span>
+            <div class="picker-group">
+                <label class="picker-label">Home</label>
+                <select id="home-select" class="team-select">
+                    {% for team in teams %}
+                    <option value="{{ team }}" {% if loop.index == 2 %}selected{% endif %}>{{ team }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <button id="predict-btn" class="btn predict-btn">Predict</button>
+    </div>
+
+    <div id="result" class="pregame-result" style="display:none">
+        <div class="pregame-matchup">
+            <div class="pregame-team-block" id="away-block">
+                <img id="away-logo" src="" alt="" class="pregame-logo">
+                <span id="away-tricode" class="pregame-tricode"></span>
+                <span id="away-elo" class="pregame-elo"></span>
+                <span id="away-prob" class="pregame-prob"></span>
+            </div>
+            <span class="pregame-vs">@</span>
+            <div class="pregame-team-block" id="home-block">
+                <img id="home-logo" src="" alt="" class="pregame-logo">
+                <span id="home-tricode" class="pregame-tricode"></span>
+                <span id="home-elo" class="pregame-elo"></span>
+                <span id="home-prob" class="pregame-prob"></span>
+            </div>
+        </div>
+
+        <div class="pregame-bar-section">
+            <span class="pregame-bar-label" id="result-away-label"></span>
+            <div class="win-prob-bar">
+                <div class="win-prob-away" id="result-away-bar" style="width:50%"></div>
+                <div class="win-prob-home" id="result-home-bar" style="width:50%"></div>
+            </div>
+            <span class="pregame-bar-label" id="result-home-label"></span>
+        </div>
+
+        <p id="verdict" class="pregame-verdict"></p>
+    </div>
+
+    <p id="error-msg" class="pregame-error" style="display:none"></p>
+</div>
+
+<script>
+const ESPN_CODE = { UTA:"utah", NOP:"no", GSW:"gs", SAS:"sa" };
+function logoUrl(t) { return `https://a.espncdn.com/i/teamlogos/nba/500/${ESPN_CODE[t] || t}.png`; }
+
+document.getElementById("predict-btn").addEventListener("click", async () => {
+    const home = document.getElementById("home-select").value;
+    const away = document.getElementById("away-select").value;
+    const result = document.getElementById("result");
+    const err = document.getElementById("error-msg");
+
+    result.style.display = "none";
+    err.style.display = "none";
+
+    if (home === away) {
+        err.textContent = "Please select two different teams.";
+        err.style.display = "block";
+        return;
+    }
+
+    const res = await fetch(`/api/pregame?home=${home}&away=${away}`);
+    if (!res.ok) { err.textContent = "Prediction unavailable."; err.style.display = "block"; return; }
+    const d = await res.json();
+
+    document.getElementById("home-logo").src = logoUrl(home);
+    document.getElementById("away-logo").src = logoUrl(away);
+    document.getElementById("home-tricode").textContent = home;
+    document.getElementById("away-tricode").textContent = away;
+    document.getElementById("home-elo").textContent = `Elo: ${d.home_elo}`;
+    document.getElementById("away-elo").textContent = `Elo: ${d.away_elo}`;
+
+    const hp = (d.home_win_prob * 100).toFixed(1);
+    const ap = (d.away_win_prob * 100).toFixed(1);
+    document.getElementById("home-prob").textContent = hp + "%";
+    document.getElementById("away-prob").textContent = ap + "%";
+    document.getElementById("result-home-bar").style.width = hp + "%";
+    document.getElementById("result-away-bar").style.width = ap + "%";
+    document.getElementById("result-home-label").textContent = hp + "%";
+    document.getElementById("result-away-label").textContent = ap + "%";
+
+    const fav = d.home_win_prob >= d.away_win_prob ? home : away;
+    const favProb = Math.max(d.home_win_prob, d.away_win_prob);
+    document.getElementById("verdict").textContent =
+        `${fav} favoured to win (${(favProb * 100).toFixed(1)}%)`;
+
+    // highlight the favoured team
+    document.getElementById("home-block").classList.toggle("favoured", d.home_win_prob > d.away_win_prob);
+    document.getElementById("away-block").classList.toggle("favoured", d.away_win_prob > d.home_win_prob);
+
+    result.style.display = "block";
+});
+</script>
+{% endblock %}

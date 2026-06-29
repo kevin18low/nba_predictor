@@ -24,6 +24,23 @@
 
             <p class="game-card-status">{{ game.status }}</p>
 
+            {% if game.pregame %}
+            <div class="card-pregame">
+                <div class="card-pregame-row">
+                    <span class="card-pregame-team {% if game.pregame.away_win_prob > game.pregame.home_win_prob %}card-fav{% endif %}">{{ game.away_team }}</span>
+                    <span class="card-pregame-prob {% if game.pregame.away_win_prob > game.pregame.home_win_prob %}card-fav{% endif %}">{{ "%.0f"|format(game.pregame.away_win_prob * 100) }}%</span>
+                </div>
+                <div class="card-pregame-bar">
+                    <div class="card-pregame-bar-away" style="width:{{ "%.1f"|format(game.pregame.away_win_prob * 100) }}%"></div>
+                    <div class="card-pregame-bar-home" style="width:{{ "%.1f"|format(game.pregame.home_win_prob * 100) }}%"></div>
+                </div>
+                <div class="card-pregame-row">
+                    <span class="card-pregame-team {% if game.pregame.home_win_prob > game.pregame.away_win_prob %}card-fav{% endif %}">{{ game.home_team }}</span>
+                    <span class="card-pregame-prob {% if game.pregame.home_win_prob > game.pregame.away_win_prob %}card-fav{% endif %}">{{ "%.0f"|format(game.pregame.home_win_prob * 100) }}%</span>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="game-card-links">
                 <a href="{{ url_for('scoreboard', game_id=game.game_id) }}" class="btn">Scoreboard</a>
                 <a href="{{ url_for('court', game_id=game.game_id) }}" class="btn btn-secondary">Court</a>
@@ -56,6 +73,24 @@
                 </div>
             </div>
             <p class="game-card-status">{{ game.game_date }}</p>
+
+            {% if game.pregame %}
+            <div class="card-pregame">
+                <div class="card-pregame-row">
+                    <span class="card-pregame-team {% if game.pregame.away_win_prob > game.pregame.home_win_prob %}card-fav{% endif %}">{{ game.away_team }}</span>
+                    <span class="card-pregame-prob {% if game.pregame.away_win_prob > game.pregame.home_win_prob %}card-fav{% endif %}">{{ "%.0f"|format(game.pregame.away_win_prob * 100) }}%</span>
+                </div>
+                <div class="card-pregame-bar">
+                    <div class="card-pregame-bar-away" style="width:{{ "%.1f"|format(game.pregame.away_win_prob * 100) }}%"></div>
+                    <div class="card-pregame-bar-home" style="width:{{ "%.1f"|format(game.pregame.home_win_prob * 100) }}%"></div>
+                </div>
+                <div class="card-pregame-row">
+                    <span class="card-pregame-team {% if game.pregame.home_win_prob > game.pregame.away_win_prob %}card-fav{% endif %}">{{ game.home_team }}</span>
+                    <span class="card-pregame-prob {% if game.pregame.home_win_prob > game.pregame.away_win_prob %}card-fav{% endif %}">{{ "%.0f"|format(game.pregame.home_win_prob * 100) }}%</span>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="game-card-links">
                 <a href="{{ url_for('replay', game_id=game.game_id) }}" class="btn">Replay</a>
             </div>

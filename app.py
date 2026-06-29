@@ -4,6 +4,7 @@ from flask import Flask, jsonify, render_template, abort
 from state import app_state, _lock
 from live.poller import start_poller
 from live.replay import build_replay, get_featured_games
+from prediction.predict_pregame import predict_pregame, load_pregame_model
 
 app = Flask(__name__)
 
@@ -23,14 +24,26 @@ def espn_logo(tricode):
 if not os.environ.get("WERKZEUG_RUN_MAIN"):
     start_poller()
 
+pregame_model = load_pregame_model()
+
+def safe_pregame(home_team, away_team):
+    try:
+        return predict_pregame(home_team, away_team, model=pregame_model)
+    except Exception:
+        return None
+
 # -- Web Routes --
 
 @app.route("/")
 def index():
     with _lock:
         games = copy.deepcopy(app_state["games"])
-    return render_template("index.html", games=games, featured=get_featured_games())
-
+    featured = get_featured_games()
+    for g in games:
+        g["pregame"] = safe_pregame(g["home_team"], g["away_team"])
+    for g in featured:
+        g["pregame"] = safe_pregame(g["home_team"], g["away_team"])
+    return render_template("index.html", games=games, featured=featured)
 
 @app.route("/game/<game_id>/scoreboard")
 def scoreboard(game_id):
@@ -40,7 +53,6 @@ def scoreboard(game_id):
     if data is None:
         abort(404)
     return render_template("scoreboard.html", game_id=game_id, games=games, data=data)
-
 
 @app.route("/game/<game_id>/court")
 def court(game_id):
@@ -55,7 +67,6 @@ def court(game_id):
                            away_team=data["away_team"],
                            game_label="Live")
 
-
 @app.route("/game/<game_id>/replay")
 def replay(game_id):
     game = next((g for g in get_featured_games() if g["game_id"] == game_id), None)
@@ -69,7 +80,6 @@ def replay(game_id):
                            away_team=game["away_team"],
                            game_label=game["game_date"])
 
-
 # -- API routes --
 
 @app.route("/api/games")
@@ -77,7 +87,6 @@ def api_games():
     with _lock:
         games = copy.deepcopy(app_state["games"])
     return jsonify(games)
-
 
 @app.route("/api/game/<game_id>/state")
 def api_game_state(game_id):
@@ -101,7 +110,6 @@ def api_game_state(game_id):
         "last_updated": data["last_updated"],
     })
 
-
 @app.route("/api/game/<game_id>/shots")
 def api_game_shots(game_id):
     with _lock:
@@ -113,7 +121,6 @@ def api_game_shots(game_id):
         "shots": data["shots"],
     })
 
-
 @app.route("/api/game/<game_id>/replay")
 def api_replay(game_id):
     game = next((g for g in get_featured_games() if g["game_id"] == game_id), None)
@@ -121,7 +128,6 @@ def api_replay(game_id):
         abort(404)
     data = build_replay(game_id, game["home_team"], game["away_team"])
     return jsonify(data)
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
