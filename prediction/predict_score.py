@@ -48,8 +48,7 @@ def get_total_secs_remaining(quarter, time_remaining_secs):
         return time_remaining_secs
     
 # predict the final score given the current game state
-# blend: how much to weight season averages vs in-game pace (0 = purely in-game, 1 = purely season average). Lower blend = trusts current game pace more
-def predict_score(state, home_team, away_team, blend=0.3):
+def predict_score(state, home_team, away_team):
     quarter = state["quarter"]
     time_remaining_secs = state["time_remaining_secs"]
     home_score = state["home_score"]
@@ -78,8 +77,10 @@ def predict_score(state, home_team, away_team, blend=0.3):
 
     # blend in-game rate with season average
     # early in game -> trust season avg more; late in game -> trust live rate more
+    # season-average weight starts at ~1.0 at tip-off and fades to 0 at the buzzer,
+    # hot stretches can't get extrapolated into absurd final score
     game_progress = 1 - (secs_remaining / GAME_SECS)
-    dynamic_blend = blend * (1 - game_progress)  # blend shrinks as game progresses
+    dynamic_blend = 1 - game_progress
 
     home_rate = (1 - dynamic_blend) * home_rate_live + dynamic_blend * home_rate_avg
     away_rate = (1 - dynamic_blend) * away_rate_live + dynamic_blend * away_rate_avg
