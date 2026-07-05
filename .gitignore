@@ -6,14 +6,14 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Database (too large, local only)
+# Full database (too large, local only) — runtime.db is the slim deploy copy
 data/*.db
+!data/runtime.db
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Models (we'll save these locally, not on GitHub)
-models/
+# Trained models are small (<1 MB total) and needed at deploy time, so they are committed
 
 # Environment variables (sensitive keys etc)
 .env

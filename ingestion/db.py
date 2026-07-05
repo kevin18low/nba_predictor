@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "nba.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", os.environ.get("NBA_DB_FILE", "nba.db"))
 
 # Connect to SQLite
 def get_connection():

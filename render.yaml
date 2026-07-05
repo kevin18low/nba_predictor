@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: nba-predictor
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # one worker only: the poller thread and in-memory game state live in a
+    # single process; multiple workers would each start their own poller
+    startCommand: gunicorn app:app --workers 1 --threads 8
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.5
+      - key: NBA_DB_FILE
+        value: runtime.db
