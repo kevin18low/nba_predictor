@@ -2,6 +2,8 @@
 
 Real-time NBA game analysis with live win probability and per-shot quality predictions, served through a Flask web UI.
 
+**Live demo:** https://nba-predictor-f2lw.onrender.com
+
 ## Overview
 
 Two machine learning models run together during live games:
@@ -103,6 +105,21 @@ Features: court coordinates (x, y, distance), shot zone and area (label-encoded)
 | `GET /api/game/<id>/state` | Live scores, win probabilities, projected final |
 | `GET /api/game/<id>/shots` | All shot events with quality probabilities |
 | `GET /api/game/<id>/replay` | Full shot-by-shot replay sequence |
+
+## Deployment
+
+Deployed on [Render](https://render.com) via [render.yaml](render.yaml), running under gunicorn with a single worker (the live-game poller and in-memory state live in one process).
+
+The full `data/nba.db` (~300 MB of training data) stays local. A slim `data/runtime.db` (~0.5 MB) is committed instead, containing only what the app needs at runtime: game results, team stats, elo ratings, and play-by-play for the 12 featured replay games. The `NBA_DB_FILE` env var selects the database (`nba.db` locally, `runtime.db` in production).
+
+To refresh the deployed site with recent games:
+
+```bash
+# 1. update local data (ingestion + elo/team stats)
+# 2. rebuild the slim database
+python ingestion/build_runtime_db.py
+# 3. commit data/runtime.db and push — Render redeploys automatically
+```
 
 ## Dependencies
 
