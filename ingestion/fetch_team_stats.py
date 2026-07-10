@@ -2,10 +2,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import argparse
 import time
 from nba_api.stats.endpoints import leaguedashteamstats
 from nba_api.stats.static import teams as nba_teams
 from ingestion.db import get_connection
+
+DEFAULT_SEASONS = ["2023-24", "2024-25", "2025-26"]
 
 # build a lookup from team_id -> abbreviation using the static teams list
 def id_to_abbrev():
@@ -54,8 +57,16 @@ def fetch_and_store_team_stats(season="2025-26"):
     print(f"Stored stats for {inserted} teams ({season}).")
 
 if __name__ == "__main__":
-    fetch_and_store_team_stats(season="2023-24")
-    time.sleep(1)
-    fetch_and_store_team_stats(season="2024-25")
-    time.sleep(1)
-    fetch_and_store_team_stats(season="2025-26")
+    parser = argparse.ArgumentParser(description="Fetch and store advanced team stats for one or more seasons.")
+    parser.add_argument(
+        "seasons",
+        nargs="*",
+        default=DEFAULT_SEASONS,
+        help='Seasons like "2025-26" (default: %(default)s)',
+    )
+    args = parser.parse_args()
+
+    for i, season in enumerate(args.seasons):
+        if i > 0:
+            time.sleep(1)
+        fetch_and_store_team_stats(season=season)

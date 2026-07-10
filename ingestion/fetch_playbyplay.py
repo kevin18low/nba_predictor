@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import argparse
 import time
 from nba_api.stats.endpoints import playbyplayv3
 from ingestion.db import get_connection
@@ -118,4 +119,13 @@ def process_games(limit=None):
     conn.close()
 
 if __name__ == "__main__":
-    process_games()
+    parser = argparse.ArgumentParser(description="Fetch and store play-by-play states for games missing them.")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max number of games to process (default: all missing games)",
+    )
+    args = parser.parse_args()
+
+    process_games(limit=args.limit)

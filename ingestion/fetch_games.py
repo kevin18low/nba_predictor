@@ -2,10 +2,12 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import argparse
 import time
 from nba_api.stats.endpoints import leaguegamefinder
 from ingestion.db import get_connection
 
+DEFAULT_SEASONS = ["2022-23", "2023-24", "2024-25", "2025-26"]
 
 # fetch and store all games for a given season in the games table
 def fetch_and_store_games(season="2025-26", season_type="Regular Season"):
@@ -58,10 +60,16 @@ def fetch_and_store_games(season="2025-26", season_type="Regular Season"):
     print(f"Stored {inserted} games from the {season} {season_type}.")
 
 if __name__ == "__main__":
-    fetch_and_store_games(season="2022-23")
-    time.sleep(1)
-    fetch_and_store_games(season="2023-24")
-    time.sleep(1)
-    fetch_and_store_games(season="2024-25")
-    time.sleep(1)
-    fetch_and_store_games(season="2025-26")
+    parser = argparse.ArgumentParser(description="Fetch and store NBA games for one or more seasons.")
+    parser.add_argument(
+        "seasons",
+        nargs="*",
+        default=DEFAULT_SEASONS,
+        help='Seasons like "2025-26" (default: %(default)s)',
+    )
+    args = parser.parse_args()
+
+    for i, season in enumerate(args.seasons):
+        if i > 0:
+            time.sleep(1)
+        fetch_and_store_games(season=season)

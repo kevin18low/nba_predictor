@@ -25,10 +25,15 @@ nba_predictor/
 │   ├── db.py                     # SQLite connection and schema initialization
 │   ├── fetch_games.py            # Fetch and store historical game results
 │   ├── fetch_playbyplay.py       # Fetch and store play-by-play game states
-│   └── fetch_shots.py            # Fetch and store shot attempt data
+│   ├── fetch_shots.py            # Fetch and store shot attempt data
+│   ├── fetch_team_stats.py       # Fetch per-season team stats (off/def rating, etc.)
+│   ├── compute_elo.py            # Compute elo ratings from stored game results
+│   └── build_runtime_db.py       # Build slim runtime.db for deployment
 ├── prediction/
 │   ├── train_win_probability.py  # Train win probability model
 │   ├── train_shot_model.py       # Train shot quality model
+│   ├── train_pregame.py          # Train pre-game prediction model (elo + team stats)
+│   ├── predict_pregame.py        # Load pregame model and run inference
 │   ├── predict_score.py          # Project final score from current game state
 │   └── predict_shot.py           # Load shot model and run inference
 ├── live/
@@ -68,6 +73,16 @@ python ingestion/db.py
 python ingestion/fetch_games.py
 python ingestion/fetch_playbyplay.py
 python ingestion/fetch_shots.py
+python ingestion/fetch_team_stats.py
+python ingestion/compute_elo.py
+```
+
+`fetch_games.py`, `fetch_shots.py`, and `fetch_team_stats.py` accept seasons as arguments (run with `--help` to see each script's defaults), and `fetch_playbyplay.py` accepts an optional `--limit`:
+
+```bash
+python ingestion/fetch_games.py 2025-26              # single season
+python ingestion/fetch_games.py 2024-25 2025-26      # multiple seasons
+python ingestion/fetch_playbyplay.py --limit 50      # only process 50 games
 ```
 
 ### 3. Train the models
@@ -115,10 +130,18 @@ The full `data/nba.db` (~300 MB of training data) stays local. A slim `data/runt
 To refresh the deployed site with recent games:
 
 ```bash
-# 1. update local data (ingestion + elo/team stats)
+# 1. update local data
+python ingestion/fetch_games.py 2025-26
+python ingestion/fetch_team_stats.py
+python ingestion/compute_elo.py
+
 # 2. rebuild the slim database
 python ingestion/build_runtime_db.py
-# 3. commit data/runtime.db and push — Render redeploys automatically
+
+# 3. commit data/runtime.db and push - Render redeploys automatically
+git add data/runtime.db
+git commit -m "data: refresh runtime db with recent games"
+git push
 ```
 
 ## Dependencies

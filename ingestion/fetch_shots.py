@@ -2,10 +2,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import argparse
 import time
 import pandas as pd
 from nba_api.stats.endpoints import shotchartdetail
 from ingestion.db import get_connection
+
+DEFAULT_SEASONS = ["2022-23", "2023-24", "2024-25", "2025-26"]
 
 # fetch all shots taken per player
 def fetch_player_shots(player_id, player_name, season):
@@ -80,7 +83,7 @@ def get_players():
     return players
 
 # fetch shot data across all players
-def process_all_players(seasons=["2022-23", "2023-24", "2024-25", "2025-26"]):
+def process_all_players(seasons=DEFAULT_SEASONS):
     players = get_players()
     print(f"Processing {len(players)} players")
 
@@ -110,4 +113,13 @@ def process_all_players(seasons=["2022-23", "2023-24", "2024-25", "2025-26"]):
             time.sleep(0.2)
 
 if __name__ == "__main__":
-    process_all_players()
+    parser = argparse.ArgumentParser(description="Fetch and store shot attempts for all known players across seasons.")
+    parser.add_argument(
+        "seasons",
+        nargs="*",
+        default=DEFAULT_SEASONS,
+        help='Seasons like "2025-26" (default: %(default)s)',
+    )
+    args = parser.parse_args()
+
+    process_all_players(seasons=args.seasons)
