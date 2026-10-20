@@ -1,5 +1,6 @@
 import os
 import copy
+import threading
 from flask import Flask, jsonify, render_template, abort
 from state import app_state, _lock
 from live.poller import start_poller
@@ -20,9 +21,18 @@ _ESPN_CODE = {
 def espn_logo(tricode):
     return _ESPN_CODE.get(tricode, tricode)
 
-# guard against double-start under Flask's debug reloader.
-if not os.environ.get("WERKZEUG_RUN_MAIN"):
-    start_poller()
+_poller_lock = threading.Lock()
+_poller_started = False
+
+@app.before_request
+def ensure_poller():
+    global _poller_started
+    if _poller_started:
+        return
+    with _poller_lock:
+        if not _poller_started:
+            _poller_started = True
+            start_poller()
 
 pregame_model = load_pregame_model()
 
