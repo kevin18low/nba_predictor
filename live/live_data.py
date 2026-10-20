@@ -2,19 +2,24 @@ from nba_api.live.nba.endpoints import scoreboard, playbyplay
 from nba_api.live.nba.library.http import NBALiveHTTP
 from ingestion.fetch_playbyplay import parse_time
 import requests
+import os
 
 NBALiveHTTP.headers = {
     "Accept": "application/json",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
-    "Host": "cdn.nba.com",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     "Referer": "https://www.nba.com/",
     "Origin": "https://www.nba.com",
 }
 
-SCOREBOARD_URL = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+# cdn.nba.com blocks cloud-provider IPs (e.g. Render). Route through a proxy
+LIVE_PROXY = os.environ.get("NBA_LIVE_PROXY")
+if LIVE_PROXY:
+    NBALiveHTTP.base_url = LIVE_PROXY.rstrip("/") + "/static/json/liveData/{endpoint}"
+
+SCOREBOARD_URL = NBALiveHTTP.base_url.format(endpoint="scoreboard/todaysScoreboard_00.json")
 
 # get all live NBA games with current scores and teams
 def get_live_scoreboard():
