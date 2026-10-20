@@ -26,6 +26,11 @@ def predict_pregame(home_team, away_team, model=None):
     season = current_season()
     conn = get_connection()
 
+    # early in a new season there are no team stats yet, so use the latest season recorded
+    has_stats = conn.execute("SELECT 1 FROM team_stats WHERE season = ? LIMIT 1", (season,)).fetchone()
+    if has_stats is None:
+        season = conn.execute("SELECT MAX(season) FROM team_stats").fetchone()[0]
+
     home_stats = conn.execute("""
         SELECT off_rating, def_rating, pace
         FROM team_stats WHERE season = ? AND team = ?
