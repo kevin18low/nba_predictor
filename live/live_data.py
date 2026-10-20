@@ -1,6 +1,7 @@
 from nba_api.live.nba.endpoints import scoreboard, playbyplay
 from nba_api.live.nba.library.http import NBALiveHTTP
 from ingestion.fetch_playbyplay import parse_time
+import requests
 
 NBALiveHTTP.headers = {
     "Accept": "application/json",
@@ -13,9 +14,17 @@ NBALiveHTTP.headers = {
     "Origin": "https://www.nba.com",
 }
 
+SCOREBOARD_URL = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+
 # get all live NBA games with current scores and teams
 def get_live_scoreboard():
-    board = scoreboard.ScoreBoard()
+    try:
+        board = scoreboard.ScoreBoard()
+    except ValueError:
+        # response wasn't JSON: log what the CDN actually sent
+        r = requests.get(SCOREBOARD_URL, headers=NBALiveHTTP.headers, timeout=10)
+        print(f"[live] scoreboard returned {r.status_code}: {r.text[:200]!r}")
+        raise
     return board.games.get_dict()
 
 # get full play-by-play actions for a live game
