@@ -215,7 +215,7 @@ def split_by_date(df, test_size=0.3):
     return df["game_date"] < cutoff, cutoff
 
 # train and evaluate model
-def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
+def train(df, cutoff, df_all, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
     feats = [
         "x",
         "y",
@@ -265,6 +265,9 @@ def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, lea
     print(f"Accuracy: {final_acc:.4f}")
     print(f"Log Loss: {final_ll:.4f}")
 
+    print(f"\nRefitting on all {len(df_all):,} shots for the live app.")
+    gb.fit(df_all[feats], df_all["made"])
+
     with open("models/shot_model.pkl", "wb") as f:
         pickle.dump(gb, f)
 
@@ -288,7 +291,10 @@ if __name__ == "__main__":
     context = compute_ingame_context(game_states)
 
     is_train, cutoff = split_by_date(shots)
-    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots[is_train])
+    train_stats = compute_player_stats(shots[is_train])
+    df, _, _, _ = engineer_feats(shots, context, *train_stats)
 
-    df, le_zone, le_area, le_action = engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
-    train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
+    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots)
+    df_all, le_zone, le_area, le_action = engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
+
+    train(df, cutoff, df_all, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
