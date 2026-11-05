@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pandas as pd
 import pickle
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import cross_validate
+from sklearn.model_selection import GroupKFold, cross_validate
 from sklearn.metrics import log_loss
 from ingestion.db import get_connection
 
@@ -156,7 +156,10 @@ def train(df):
 
     print("\nTraining Win Probability Model With Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
-    gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1, params={"sample_weight": w_train})
+
+    # keep all of a game's rows in one fold, so CV never scores a game it trained on
+    games_train = df.loc[is_train, "game_id"]
+    gb_cv = cross_validate(gb, X_train, y_train, groups=games_train, cv=GroupKFold(n_splits=5), scoring=scoring, n_jobs=-1, params={"sample_weight": w_train})
     print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} ± {gb_cv['test_accuracy'].std():.4f}")
     print(f"CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} ± {gb_cv['test_neg_log_loss'].std():.4f}")
 
@@ -168,6 +171,9 @@ def train(df):
     print(f"\nFinal Test Scores:")
     print(f"Accuracy: {final_acc:.4f}")
     print(f"Log Loss: {final_ll:.4f}")
+
+    print(f"\nRefitting on all {len(X):,} rows for the live app.")
+    gb.fit(X, y, sample_weight=w)
 
     with open("models/win_prob_model.pkl", "wb") as f:
         pickle.dump(gb, f)
