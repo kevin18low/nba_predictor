@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pandas as pd
 import pickle
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import cross_validate
+from sklearn.model_selection import GroupKFold, cross_validate
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
 from ingestion.db import get_connection
@@ -215,7 +215,7 @@ def split_by_date(df, test_size=0.3):
     return df["game_date"] < cutoff, cutoff
 
 # train and evaluate model
-def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
+def train(df, cutoff, df_all, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
     feats = [
         "x",
         "y",
@@ -249,7 +249,10 @@ def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, lea
 
     print("\nTraining Shot Quality Model With Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
-    gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1)
+
+    # keep all of a game's shots in one fold, so CV never scores a game it trained on
+    games_train = df.loc[is_train, "game_id"]
+    gb_cv = cross_validate(gb, X_train, y_train, groups=games_train, cv=GroupKFold(n_splits=5), scoring=scoring, n_jobs=-1)
     print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} +/- {gb_cv['test_accuracy'].std():.4f}")
     print(f"CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} +/- {gb_cv['test_neg_log_loss'].std():.4f}")
 
@@ -261,6 +264,9 @@ def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, lea
     print(f"\nFinal Test Scores:")
     print(f"Accuracy: {final_acc:.4f}")
     print(f"Log Loss: {final_ll:.4f}")
+
+    print(f"\nRefitting on all {len(df_all):,} shots for the live app.")
+    gb.fit(df_all[feats], df_all["made"])
 
     with open("models/shot_model.pkl", "wb") as f:
         pickle.dump(gb, f)
@@ -285,7 +291,10 @@ if __name__ == "__main__":
     context = compute_ingame_context(game_states)
 
     is_train, cutoff = split_by_date(shots)
-    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots[is_train])
+    train_stats = compute_player_stats(shots[is_train])
+    df, _, _, _ = engineer_feats(shots, context, *train_stats)
 
-    df, le_zone, le_area, le_action = engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
-    train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
+    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots)
+    df_all, le_zone, le_area, le_action = engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
+
+    train(df, cutoff, df_all, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
