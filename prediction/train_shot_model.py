@@ -215,7 +215,7 @@ def split_by_date(df, test_size=0.3):
     return df["game_date"] < cutoff, cutoff
 
 # train and evaluate model
-def train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
+def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
     feats = [
         "x",
         "y",
@@ -239,7 +239,7 @@ def train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg,
 
     print(f"\nClass balance: {y.mean():.3f} made rate")
 
-    is_train, cutoff = split_by_date(df)
+    is_train = df["game_date"] < cutoff
     X_train, X_test = X[is_train], X[~is_train]
     y_train, y_test = y[is_train], y[~is_train]
 
@@ -283,6 +283,9 @@ def train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg,
 if __name__ == "__main__":
     shots, game_states = load_shot_data()
     context = compute_ingame_context(game_states)
-    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots)
+
+    is_train, cutoff = split_by_date(shots)
+    player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs = compute_player_stats(shots[is_train])
+
     df, le_zone, le_area, le_action = engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
-    train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
+    train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs)
