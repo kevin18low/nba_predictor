@@ -282,6 +282,16 @@ a {
     color: #ccc;
 }
 
+.game-card-score {
+    font-size: 24px;
+    font-weight: 700;
+    color: #666;
+}
+
+.game-card-score.game-card-winner {
+    color: #fff;
+}
+
 .game-card-at {
     font-size: 20px;
     color: #555;

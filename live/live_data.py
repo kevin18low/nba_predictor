@@ -61,6 +61,8 @@ def get_recent_final_games(limit):
         "game_date": g["gameDateEst"][:10], # US date
         "home_team": g["homeTeam"]["teamTricode"],
         "away_team": g["awayTeam"]["teamTricode"],
+        "home_score": g["homeTeam"]["score"],
+        "away_score": g["awayTeam"]["score"],
     } for g in finals[:limit]]
 
 # Extract current game state from the most recent action with a score
