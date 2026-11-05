@@ -172,6 +172,9 @@ def train(df):
     print(f"Accuracy: {final_acc:.4f}")
     print(f"Log Loss: {final_ll:.4f}")
 
+    print(f"\nRefitting on all {len(X):,} rows for the live app.")
+    gb.fit(X, y, sample_weight=w)
+
     with open("models/win_prob_model.pkl", "wb") as f:
         pickle.dump(gb, f)
 
