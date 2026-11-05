@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pandas as pd
 import pickle
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.model_selection import cross_validate
 from sklearn.metrics import log_loss
 from ingestion.db import get_connection
 
@@ -71,8 +71,9 @@ def load_game_states():
     conn = get_connection()
 
     df = pd.read_sql_query("""
-        SELECT game_id, quarter, time_remaining_secs, home_score, away_score, score_diff, home_win
-        FROM game_states
+        SELECT gs.game_id, g.game_date, gs.quarter, gs.time_remaining_secs, gs.home_score, gs.away_score, gs.score_diff, gs.home_win
+        FROM game_states gs
+        JOIN games g ON gs.game_id = g.game_id
     """, conn)
 
     print(f"Loaded {len(df)} rows")
@@ -117,6 +118,13 @@ def engineer_feats(df):
 
     return df
 
+# hold out the most recent games for testing, so no game lands on both sides of the split
+# returns a True/False mask of training rows, plus the first date in the test set
+def split_by_date(df, test_size=0.3):
+    game_dates = df.drop_duplicates("game_id")["game_date"].sort_values()
+    cutoff = game_dates.iloc[int(len(game_dates) * (1 - test_size))]
+    return df["game_date"] < cutoff, cutoff
+
 # train and evaluate model
 def train(df):
     feats = [
@@ -137,9 +145,12 @@ def train(df):
     y = df["home_win"]
     w = 0.5 + df["game_progress"] # weigh late game states as more impactful
 
-    X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
-        X, y, w, test_size=0.3, random_state=18
-    )
+    is_train, cutoff = split_by_date(df)
+    X_train, X_test = X[is_train], X[~is_train]
+    y_train, y_test = y[is_train], y[~is_train]
+    w_train = w[is_train]
+
+    print(f"\nTrain: {len(X_train):,} rows before {cutoff} | Test: {len(X_test):,} rows from {cutoff} on")
 
     scoring = ["accuracy", "neg_log_loss"]
 
