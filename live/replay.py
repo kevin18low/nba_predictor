@@ -42,7 +42,7 @@ def get_featured_games():
 def _featured_games_from_db():
     conn = get_connection()
     rows = pd.read_sql_query("""
-        SELECT g.game_id, g.game_date, g.home_team, g.away_team
+        SELECT g.game_id, g.game_date, g.home_team, g.away_team, g.home_score, g.away_score
         FROM games g
         WHERE g.home_score IS NOT NULL
         AND EXISTS (

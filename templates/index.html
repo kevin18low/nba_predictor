@@ -64,12 +64,14 @@
                     <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.away_team | espn_logo }}.png"
                          alt="{{ game.away_team }}" class="game-card-logo">
                     <span class="game-card-tricode">{{ game.away_team }}</span>
+                    <span class="game-card-score {% if game.away_score > game.home_score %}game-card-winner{% endif %}">{{ game.away_score }}</span>
                 </div>
                 <span class="game-card-at">@</span>
                 <div class="game-card-team">
                     <img src="https://a.espncdn.com/i/teamlogos/nba/500/{{ game.home_team | espn_logo }}.png"
                          alt="{{ game.home_team }}" class="game-card-logo">
                     <span class="game-card-tricode">{{ game.home_team }}</span>
+                    <span class="game-card-score {% if game.home_score > game.away_score %}game-card-winner{% endif %}">{{ game.home_score }}</span>
                 </div>
             </div>
             <p class="game-card-status">{{ game.game_date }}</p>
