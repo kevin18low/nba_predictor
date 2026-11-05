@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pandas as pd
 import pickle
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.model_selection import cross_validate
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
 from ingestion.db import get_connection
@@ -16,7 +16,7 @@ def load_shot_data():
 
     # base player shot details from shot attempts
     shots = pd.read_sql_query("""
-        SELECT sa.player_id, sa.game_id, sa.x, sa.y, sa.shot_distance, sa.shot_zone, sa.shot_zone_area, sa.shot_type, sa.action_type, sa.made
+        SELECT sa.player_id, sa.game_id, sa.game_date, sa.x, sa.y, sa.shot_distance, sa.shot_zone, sa.shot_zone_area, sa.shot_type, sa.action_type, sa.made
         FROM shot_attempts sa
         WHERE sa.x IS NOT NULL
         AND sa.y IS NOT NULL
@@ -207,6 +207,13 @@ def engineer_feats(shots, context, player_stats, zone_stats, league_avg, league_
 
     return df, le_zone, le_area, le_action
 
+# hold out the most recent games for testing, so no game lands on both sides of the split
+# returns a True/False mask of training rows, plus the first date in the test set
+def split_by_date(df, test_size=0.3):
+    game_dates = df.drop_duplicates("game_id")["game_date"].sort_values()
+    cutoff = game_dates.iloc[int(len(game_dates) * (1 - test_size))]
+    return df["game_date"] < cutoff, cutoff
+
 # train and evaluate model
 def train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg, league_3pt_avg, zone_league_avgs):
     feats = [
@@ -232,9 +239,11 @@ def train(df, le_zone, le_area, le_action, player_stats, zone_stats, league_avg,
 
     print(f"\nClass balance: {y.mean():.3f} made rate")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=18
-    )
+    is_train, cutoff = split_by_date(df)
+    X_train, X_test = X[is_train], X[~is_train]
+    y_train, y_test = y[is_train], y[~is_train]
+
+    print(f"\nTrain: {len(X_train):,} rows before {cutoff} | Test: {len(X_test):,} rows from {cutoff} on")
 
     scoring = ["accuracy", "neg_log_loss"]
 
