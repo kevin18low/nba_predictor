@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pandas as pd
 import pickle
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import cross_validate
+from sklearn.model_selection import GroupKFold, cross_validate
 from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
 from ingestion.db import get_connection
@@ -249,7 +249,10 @@ def train(df, cutoff, le_zone, le_area, le_action, player_stats, zone_stats, lea
 
     print("\nTraining Shot Quality Model With Gradient Boosting.")
     gb = GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=18)
-    gb_cv = cross_validate(gb, X_train, y_train, cv=5, scoring=scoring, n_jobs=-1)
+
+    # keep all of a game's shots in one fold, so CV never scores a game it trained on
+    games_train = df.loc[is_train, "game_id"]
+    gb_cv = cross_validate(gb, X_train, y_train, groups=games_train, cv=GroupKFold(n_splits=5), scoring=scoring, n_jobs=-1)
     print(f"CV Accuracy: {gb_cv['test_accuracy'].mean():.4f} +/- {gb_cv['test_accuracy'].std():.4f}")
     print(f"CV Log Loss: {-gb_cv['test_neg_log_loss'].mean():.4f} +/- {gb_cv['test_neg_log_loss'].std():.4f}")
 
