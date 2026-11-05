@@ -125,9 +125,11 @@ Features: court coordinates (x, y, distance), shot zone and area (label-encoded)
 
 Deployed on [Render](https://render.com) via [render.yaml](render.yaml), running under gunicorn with a single worker (the live-game poller and in-memory state live in one process).
 
-The full `data/nba.db` (~300 MB of training data) stays local. A slim `data/runtime.db` (~0.5 MB) is committed instead, containing only what the app needs at runtime: game results, team stats, elo ratings, and play-by-play for the 12 featured replay games. The `NBA_DB_FILE` env var selects the database (`nba.db` locally, `runtime.db` in production).
+The full `data/nba.db` (~300 MB of training data) stays local. A slim `data/runtime.db` (~0.5 MB) is committed instead, containing only what the app needs at runtime: game results, team stats, elo ratings, and play-by-play for 12 fallback replay games. The `NBA_DB_FILE` env var selects the database (`nba.db` locally, `runtime.db` in production).
 
-To refresh the deployed site with recent games:
+The Recent Games list doesn't depend on the database: the app reads the 12 latest finished games from the NBA's schedule file every 5 minutes and builds their replays from the play-by-play feed. If the schedule can't be reached on startup, it falls back to the games in the database. When `NBA_LIVE_PROXY` is set, these requests go through the proxy too, so it must forward `/static/json/staticData/` as well as `/static/json/liveData/`.
+
+To refresh the data behind the win rates, team stats, and elo ratings:
 
 ```bash
 # 1. update local data
@@ -140,7 +142,7 @@ python ingestion/build_runtime_db.py
 
 # 3. commit data/runtime.db and push - Render redeploys automatically
 git add data/runtime.db
-git commit -m "data: refresh runtime db with recent games"
+git commit -m "data: refresh runtime db"
 git push
 ```
 
