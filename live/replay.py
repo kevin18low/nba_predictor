@@ -1,17 +1,45 @@
+import time
+import threading
 import pandas as pd
 from ingestion.db import get_connection
+from ingestion.fetch_playbyplay import parse_time
 from prediction.predict_shot import load_shot_model, load_encoders, load_player_stats, predict_shot_probability
-from live.live_predictor import load_model, build_features, predict, get_team_winrates
+from live.live_data import get_recent_final_games
+from live.live_predictor import load_model, build_features, predict, get_team_winrates, fetch_actions
 from prediction.train_win_probability import compute_winrates
 from state import app_state, _lock
 
-_featured_games = None
+FEATURED_LIMIT = 12
+FEATURED_TTL = 300 # seconds before re-checking the NBA schedule for newly finished games
 
+_featured_games = None
+_featured_fetched_at = 0
+_featured_lock = threading.Lock()
+
+# most recent finished games from the NBA schedule, cached for FEATURED_TTL
+# If the schedule can't be reached, keep the last good list, or use the database on a cold start
 def get_featured_games():
-    global _featured_games
-    if _featured_games is not None:
+    global _featured_games, _featured_fetched_at
+
+    with _featured_lock:
+        if _featured_games is not None and time.time() - _featured_fetched_at < FEATURED_TTL:
+            return _featured_games
+
+        try:
+            games = get_recent_final_games(FEATURED_LIMIT)
+        except Exception as e:
+            print(f"[replay] Could not fetch recent games: {e}")
+            games = []
+
+        if games:
+            _featured_games = games
+        elif _featured_games is None:
+            _featured_games = _featured_games_from_db()
+
+        _featured_fetched_at = time.time()
         return _featured_games
 
+def _featured_games_from_db():
     conn = get_connection()
     rows = pd.read_sql_query("""
         SELECT g.game_id, g.game_date, g.home_team, g.away_team
@@ -24,12 +52,11 @@ def get_featured_games():
             AND gs.shot_result IS NOT NULL
         )
         ORDER BY g.game_date DESC
-        LIMIT 12
-    """, conn)
+        LIMIT ?
+    """, conn, params=(FEATURED_LIMIT,))
     conn.close()
 
-    _featured_games = rows.to_dict(orient="records")
-    return _featured_games
+    return rows.to_dict(orient="records")
 
 _models = None
 
@@ -62,16 +89,8 @@ def _load_models():
     print("[replay] Models ready.")
     return _models
 
-# load all shot events for a game, compute shot probabilities, and track win probability as game progresses
-# results cached in app_state["replays"]
-def build_replay(game_id, home_team, away_team):
-    with _lock:
-        if game_id in app_state["replays"]:
-            return app_state["replays"][game_id]
-
-    print(f"[replay] Building replay for {away_team} @ {home_team} ({game_id})...")
-    m = _load_models()
-
+# shot events stored in the database (games that have been through ingestion)
+def _shot_events_from_db(game_id):
     conn = get_connection()
     events = pd.read_sql_query("""
         SELECT quarter, time_remaining_secs, home_score, away_score, person_id, player_name, team_tricode, shot_result, x, y, shot_distance
@@ -84,8 +103,46 @@ def build_replay(game_id, home_team, away_team):
         AND person_id != 0
         ORDER BY quarter ASC, time_remaining_secs DESC
     """, conn, params=(game_id,))
-
     conn.close()
+    return events
+
+# same shot events, built from the NBA's play-by-play feed for games not in the database
+def _shot_events_from_live_feed(game_id):
+    rows = []
+    for action in fetch_actions(game_id) or []:
+        if action.get("shotResult") not in ("Made", "Missed"):
+            continue
+        if not action.get("personId") or action.get("xLegacy") is None or action.get("yLegacy") is None:
+            continue
+
+        rows.append({
+            "quarter": action["period"],
+            "time_remaining_secs": parse_time(action["clock"]),
+            "home_score": int(action["scoreHome"]),
+            "away_score": int(action["scoreAway"]),
+            "person_id": action["personId"],
+            "player_name": action.get("playerNameI") or action.get("playerName"),
+            "team_tricode": action.get("teamTricode"),
+            "shot_result": action["shotResult"],
+            "x": action["xLegacy"],
+            "y": action["yLegacy"],
+            "shot_distance": round(action.get("shotDistance") or 0), # whole feet, like the database
+        })
+    return pd.DataFrame(rows)
+
+# load all shot events for a game, compute shot probabilities, and track win probability as game progresses
+# results cached in app_state["replays"]
+def build_replay(game_id, home_team, away_team):
+    with _lock:
+        if game_id in app_state["replays"]:
+            return app_state["replays"][game_id]
+
+    print(f"[replay] Building replay for {away_team} @ {home_team} ({game_id})...")
+    m = _load_models()
+
+    events = _shot_events_from_db(game_id)
+    if events.empty:
+        events = _shot_events_from_live_feed(game_id)
 
     home_wr = m["team_wr"].get(home_team, 0.5)
     away_wr = m["team_wr"].get(away_team, 0.5)
@@ -155,8 +212,10 @@ def build_replay(game_id, home_team, away_team):
         "events": timeline,
     }
 
-    with _lock:
-        app_state["replays"][game_id] = result
+    # an empty timeline means the feed failed: don't cache it, so the next visit retries
+    if timeline:
+        with _lock:
+            app_state["replays"][game_id] = result
 
     print(f"[replay] Done — {len(timeline)} events.")
     return result

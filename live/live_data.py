@@ -20,6 +20,12 @@ if LIVE_PROXY:
     NBALiveHTTP.base_url = LIVE_PROXY.rstrip("/") + "/static/json/liveData/{endpoint}"
 
 SCOREBOARD_URL = NBALiveHTTP.base_url.format(endpoint="scoreboard/todaysScoreboard_00.json")
+SCHEDULE_URL = (LIVE_PROXY.rstrip("/") if LIVE_PROXY else "https://cdn.nba.com") + "/static/json/staticData/scheduleLeagueV2.json"
+
+# game id prefixes: 002 regular season, 004 playoffs, 005 play-in, 006 NBA Cup final
+# (exclude 001 preseason and 003 All-Star)
+REAL_GAME_PREFIXES = ("002", "004", "005", "006")
+FINAL_STATUS = 3
 
 # get all live NBA games with current scores and teams
 def get_live_scoreboard():
@@ -37,6 +43,25 @@ def get_live_playbyplay(game_id):
     pbp = playbyplay.PlayByPlay(game_id=game_id)
     return pbp.actions.get_dict()
 
+# get the most recently finished games of the current season, newest first
+def get_recent_final_games(limit):
+    r = requests.get(SCHEDULE_URL, headers=NBALiveHTTP.headers, timeout=10)
+    r.raise_for_status()
+
+    finals = [
+        g
+        for day in r.json()["leagueSchedule"]["gameDates"]
+        for g in day["games"]
+        if g["gameStatus"] == FINAL_STATUS and g["gameId"].startswith(REAL_GAME_PREFIXES)
+    ]
+    finals.sort(key=lambda g: g["gameDateTimeUTC"], reverse=True)
+
+    return [{
+        "game_id": g["gameId"],
+        "game_date": g["gameDateEst"][:10], # US date
+        "home_team": g["homeTeam"]["teamTricode"],
+        "away_team": g["awayTeam"]["teamTricode"],
+    } for g in finals[:limit]]
 
 # Extract current game state from the most recent action with a score
 def get_live_game_states(actions):
