@@ -1,3 +1,15 @@
+/* --- Palette --- */
+
+:root {
+    --bg: #0B0D10;
+    --card: #14171C;
+    --border: #242932;
+    --title: #FFFFFF;
+    --home: #3D8BFF;
+    --away: #FF5257;
+    --muted: #737C88;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,9 +17,9 @@
 }
 
 body {
-    background: #111;
-    color: #fff;
-    font-family: "Bebas Neue", sans-serif;
+    background: var(--bg);
+    color: var(--title);
+    font-family: "Oswald", sans-serif;
     font-size: x-large;
 }
 
@@ -23,14 +35,14 @@ a {
     align-items: center;
     gap: 24px;
     padding: 12px 24px;
-    background: #1a1a1a;
-    border-bottom: 1px solid #333;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
 }
 
 .nav-brand {
     font-size: 32px;
     font-weight: 700;
-    color: #f90;
+    color: var(--title);
     white-space: nowrap;
 }
 
@@ -51,11 +63,11 @@ a {
 }
 
 .nav-game:hover {
-    border-color: #555;
+    border-color: var(--muted);
 }
 
 .nav-game.active {
-    border-color: #f90;
+    border-color: var(--title);
 }
 
 .nav-logo {
@@ -66,7 +78,7 @@ a {
 
 .nav-vs {
     font-size: 12px;
-    color: #888;
+    color: var(--muted);
 }
 
 /* --- Page layout --- */
@@ -81,27 +93,26 @@ a {
 
 .tabs {
     display: flex;
-    gap: 0;
     margin-bottom: 32px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
 }
 
 .tab {
     padding: 10px 24px;
     font-size: 14px;
-    color: #888;
+    color: var(--muted);
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     transition: color 0.2s, border-color 0.2s;
 }
 
 .tab:hover {
-    color: #fff;
+    color: var(--title);
 }
 
 .tab.active {
-    color: #fff;
-    border-bottom-color: #f90;
+    color: var(--title);
+    border-bottom-color: var(--title);
 }
 
 /* --- Scoreboard --- */
@@ -150,7 +161,7 @@ a {
 .clock {
     font-size: 22px;
     font-weight: 600;
-    color: #ccc;
+    color: var(--title);
 }
 
 /* --- Win probability bar --- */
@@ -171,13 +182,13 @@ a {
 }
 
 .win-prob-away {
-    background: #4a90d9;
+    background: var(--away);
     width: 50%;
     transition: width 0.6s ease;
 }
 
 .win-prob-home {
-    background: #e05c5c;
+    background: var(--home);
     width: 50%;
     transition: width 0.6s ease;
 }
@@ -185,7 +196,7 @@ a {
 .win-prob-label {
     font-size: 16px;
     font-weight: 600;
-    color: #ccc;
+    color: var(--title);
     min-width: 44px;
     text-align: center;
 }
@@ -204,17 +215,17 @@ a {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #666;
+    color: var(--muted);
 }
 
 .projection-score {
     font-size: 18px;
-    color: #ccc;
+    color: var(--title);
 }
 
 .waiting {
     text-align: center;
-    color: #666;
+    color: var(--muted);
     margin-top: 80px;
     font-size: 16px;
 }
@@ -240,8 +251,8 @@ a {
 }
 
 .game-card {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 24px;
     width: 220px;
@@ -253,7 +264,7 @@ a {
 }
 
 .game-card:hover {
-    border-color: #444;
+    border-color: var(--muted);
 }
 
 .game-card-teams {
@@ -279,28 +290,28 @@ a {
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 1px;
-    color: #ccc;
+    color: var(--title);
 }
 
 .game-card-score {
     font-size: 24px;
     font-weight: 700;
-    color: #666;
+    color: var(--muted);
 }
 
 .game-card-score.game-card-winner {
-    color: #fff;
+    color: var(--title);
 }
 
 .game-card-at {
     font-size: 20px;
-    color: #555;
+    color: var(--muted);
     padding-bottom: 20px;
 }
 
 .game-card-status {
     font-size: 16px;
-    color: #888;
+    color: var(--muted);
 }
 
 .game-card-links {
@@ -313,8 +324,8 @@ a {
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
-    background: #72E246;
-    color: #111;
+    background: var(--title);
+    color: var(--bg);
     transition: opacity 0.2s;
 }
 
@@ -323,13 +334,13 @@ a {
 }
 
 .btn-secondary {
-    background: #2a2a2a;
-    color: #ccc;
-    border: 1px solid #444;
+    background: transparent;
+    color: var(--title);
+    border: 1px solid var(--border);
 }
 
 .no-games {
-    color: #666;
+    color: var(--muted);
     font-size: 18px;
     margin-bottom: 48px;
 }
@@ -343,7 +354,7 @@ a {
 
 .index-section-sub {
     font-size: 18px;
-    color: #666;
+    color: var(--muted);
     margin-bottom: 24px;
 }
 
@@ -376,18 +387,18 @@ a {
 }
 
 .replay-at {
-    color: #555;
+    color: var(--muted);
     font-size: 20px;
 }
 
 .replay-date {
     font-size: 16px;
-    color: #666;
+    color: var(--muted);
 }
 
 .replay-loading {
     text-align: center;
-    color: #666;
+    color: var(--muted);
     margin: 60px 0;
     font-size: 15px;
 }
@@ -398,7 +409,7 @@ a {
     justify-content: space-between;
     margin-bottom: 16px;
     padding: 16px 24px;
-    background: #1a1a1a;
+    background: var(--card);
     border-radius: 10px;
 }
 
@@ -412,7 +423,7 @@ a {
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 1px;
-    color: #aaa;
+    color: var(--muted);
 }
 
 .replay-score {
@@ -430,13 +441,13 @@ a {
 .replay-clock {
     font-size: 20px;
     font-weight: 600;
-    color: #aaa;
+    color: var(--title);
 }
 
 .replay-shot-info {
     text-align: center;
     font-size: 16px;
-    color: #aaa;
+    color: var(--muted);
     margin-bottom: 16px;
     min-height: 20px;
 }
@@ -454,8 +465,8 @@ a {
     border-radius: 8px;
     font-size: 15px;
     font-weight: 600;
-    background: #72E246;
-    color: #111;
+    background: var(--title);
+    color: var(--bg);
     border: none;
     cursor: pointer;
     transition: opacity 0.2s;
@@ -466,14 +477,14 @@ a {
 }
 
 .replay-btn:disabled {
-    background: #2a2a2a;
-    color: #555;
+    background: var(--border);
+    color: var(--muted);
     cursor: default;
 }
 
 .replay-counter {
     font-size: 16px;
-    color: #666;
+    color: var(--muted);
     min-width: 80px;
     text-align: center;
 }
@@ -482,8 +493,6 @@ a {
 
 .court-wrapper {
     position: relative;
-    max-width: 500px;
-    margin: 0 auto 24px;
 }
 
 #court-svg {
@@ -495,15 +504,15 @@ a {
 .tooltip {
     display: none;
     position: fixed;
-    background: rgba(0, 0, 0, 0.88);
-    color: #fff;
+    background: var(--card);
+    color: var(--title);
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 13px;
     line-height: 1.5;
     pointer-events: none;
     z-index: 100;
-    border: 1px solid #444;
+    border: 1px solid var(--border);
 }
 
 .court-legend {
@@ -519,11 +528,15 @@ a {
     align-items: center;
     gap: 6px;
     font-size: 16px;
-    color: #888;
+    color: var(--muted);
+}
+
+.court-surface {
+    fill: var(--card);
 }
 
 .court-line {
-    stroke: #3d3d3d;
+    stroke: var(--border);
     fill: none;
     stroke-width: 2;
 }
@@ -547,11 +560,6 @@ a {
     flex: 0 0 440px;
 }
 
-.court-col .court-wrapper {
-    max-width: none;
-    margin: 0;
-}
-
 .chart-col {
     flex: 1;
     min-width: 0;
@@ -560,7 +568,7 @@ a {
 /* --- Win probability chart --- */
 
 .prob-chart-wrapper {
-    background: #161616;
+    background: var(--card);
     border-radius: 8px;
     padding: 4px 0;
 }
@@ -588,17 +596,17 @@ a {
 
 .card-pregame-team {
     font-size: 16px;
-    color: #555;
+    color: var(--muted);
     letter-spacing: 1px;
 }
 
 .card-pregame-prob {
     font-size: 16px;
-    color: #555;
+    color: var(--muted);
 }
 
 .card-fav {
-    color: #f90;
+    color: var(--title);
 }
 
 .card-pregame-bar {
@@ -610,11 +618,11 @@ a {
 }
 
 .card-pregame-bar-away {
-    background: #4a90d9;
+    background: var(--away);
     height: 100%;
 }
 
 .card-pregame-bar-home {
-    background: #e05c5c;
+    background: var(--home);
     height: 100%;
 }

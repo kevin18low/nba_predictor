@@ -29,22 +29,22 @@ function drawChart(points, cursorIdx) {
     // Quarter dividers
     for (let q = 1; q <= 3; q++) {
         const x = toChartX(q * 720).toFixed(1);
-        html += `<line x1="${x}" y1="${CP.t}" x2="${x}" y2="${CP.t + IH}" stroke="#333" stroke-width="1"/>`;
+        html += `<line x1="${x}" y1="${CP.t}" x2="${x}" y2="${CP.t + IH}" style="stroke: var(--border)" stroke-width="1"/>`;
     }
 
     // Quarter labels
     for (let q = 1; q <= 4; q++) {
         const x = toChartX((q - 0.5) * 720).toFixed(1);
-        html += `<text x="${x}" y="${CH - 6}" text-anchor="middle" fill="#ccc" font-size="12" font-family="sans-serif">Q${q}</text>`;
+        html += `<text x="${x}" y="${CH - 6}" text-anchor="middle" style="fill: var(--muted)" font-size="12">Q${q}</text>`;
     }
 
     // 50% midline
-    html += `<line x1="${CP.l}" y1="${midY.toFixed(1)}" x2="${CW - CP.r}" y2="${midY.toFixed(1)}" stroke="#333" stroke-width="1"/>`;
-    html += `<text x="${CP.l + 4}" y="${midY - 4}" fill="#ccc" font-size="12" font-family="sans-serif">50%</text>`;
+    html += `<line x1="${CP.l}" y1="${midY.toFixed(1)}" x2="${CW - CP.r}" y2="${midY.toFixed(1)}" style="stroke: var(--border)" stroke-width="1"/>`;
+    html += `<text x="${CP.l + 4}" y="${midY - 4}" style="fill: var(--muted)" font-size="12">50%</text>`;
 
     // Team labels
-    html += `<text x="${CW - CP.r - 4}" y="${CP.t + 12}" text-anchor="end" fill="#ccc" font-size="12" font-family="sans-serif">${HOME_TEAM}</text>`;
-    html += `<text x="${CW - CP.r - 4}" y="${CP.t + IH - 2}" text-anchor="end" fill="#ccc" font-size="12" font-family="sans-serif">${AWAY_TEAM}</text>`;
+    html += `<text x="${CW - CP.r - 4}" y="${CP.t + 12}" text-anchor="end" style="fill: var(--muted)" font-size="12">${HOME_TEAM}</text>`;
+    html += `<text x="${CW - CP.r - 4}" y="${CP.t + IH - 2}" text-anchor="end" style="fill: var(--muted)" font-size="12">${AWAY_TEAM}</text>`;
 
     // Build coordinate strings
     const ptStrs  = points.map(p => `${toChartX(p.elapsed).toFixed(1)},${toChartY(p.prob).toFixed(1)}`);
@@ -53,26 +53,26 @@ function drawChart(points, cursorIdx) {
     const midYStr = midY.toFixed(1);
     const areaPoints = `${firstX},${midYStr} ${ptStrs.join(' ')} ${lastX},${midYStr}`;
 
-    // Above midline = green, below midline = red
+    // Above midline = home colour, below midline = away colour
     const aboveH = (midY - CP.t).toFixed(1);
     const belowH = (CP.t + IH - midY).toFixed(1);
     html += `<defs>
         <clipPath id="clip-above"><rect x="${CP.l}" y="${CP.t}" width="${IW}" height="${aboveH}"/></clipPath>
         <clipPath id="clip-below"><rect x="${CP.l}" y="${midYStr}" width="${IW}" height="${belowH}"/></clipPath>
     </defs>`;
-    html += `<polygon points="${areaPoints}" fill="#4caf50" opacity="0.25" clip-path="url(#clip-above)"/>`;
-    html += `<polygon points="${areaPoints}" fill="#e05c5c" opacity="0.25" clip-path="url(#clip-below)"/>`;
+    html += `<polygon points="${areaPoints}" style="fill: var(--home)" opacity="0.25" clip-path="url(#clip-above)"/>`;
+    html += `<polygon points="${areaPoints}" style="fill: var(--away)" opacity="0.25" clip-path="url(#clip-below)"/>`;
 
     // Probability line
-    html += `<polyline points="${ptStrs.join(' ')}" fill="none" stroke="#f90" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    html += `<polyline points="${ptStrs.join(' ')}" fill="none" style="stroke: var(--title)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
 
     // Cursor
     if (cursorIdx >= 0 && cursorIdx < points.length) {
         const cp = points[cursorIdx];
         const cx = toChartX(cp.elapsed).toFixed(1);
         const cy = toChartY(cp.prob).toFixed(1);
-        html += `<line x1="${cx}" y1="${CP.t}" x2="${cx}" y2="${CP.t + IH}" stroke="#555" stroke-width="1" stroke-dasharray="3,2"/>`;
-        html += `<circle cx="${cx}" cy="${cy}" r="5" fill="#fff" stroke="#f90" stroke-width="2"/>`;
+        html += `<line x1="${cx}" y1="${CP.t}" x2="${cx}" y2="${CP.t + IH}" style="stroke: var(--muted)" stroke-width="1" stroke-dasharray="3,2"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="5" style="fill: var(--bg); stroke: var(--title)" stroke-width="2"/>`;
     }
 
     svg.innerHTML = html;
@@ -83,13 +83,21 @@ const liveWinHistory = []; // {elapsed, prob} — built by pollLiveState in live
 // Coordinate mapping
 function toSvg(x, y) { return [x + 250, 450 - y]; }
 
-// Map probabilities to colour
+// Map probabilities to a shade between --muted (unlikely) and --title (likely)
+// most shots fall between 20% and 80%, so that range uses the full scale
+function hexToRgb(hex) {
+    const n = parseInt(hex.trim().slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+const rootStyle = getComputedStyle(document.documentElement);
+const LOW_RGB  = hexToRgb(rootStyle.getPropertyValue("--muted"));
+const HIGH_RGB = hexToRgb(rootStyle.getPropertyValue("--title"));
+
 function probToColour(prob) {
-    if (prob >= 0.5) {
-        const t = (prob - 0.5) * 2;
-        return `rgb(${Math.round(220 * (1 - t))},200,50)`;
-    }
-    return `rgb(220,${Math.round(200 * prob * 2)},50)`;
+    const t = Math.min(Math.max((prob - 0.2) / 0.6, 0), 1);
+    const [r, g, b] = LOW_RGB.map((low, i) => Math.round(low + (HIGH_RGB[i] - low) * t));
+    return `rgb(${r},${g},${b})`;
 }
 
 function formatClock(quarter, secs) {
@@ -105,9 +113,8 @@ const tooltip = document.getElementById("tooltip");
 function drawDot(shot, highlight) {
     const [sx, sy] = toSvg(shot.x, shot.y);
     const r = highlight ? 9 : 6;
-    const fill   = probToColour(shot.probability);
-    const stroke = shot.shot_result === "Made" ? "#70E32B" : "#FF2B0F";
-    const strokeW = shot.shot_result === "Made" ? 2 : 1;
+    const colour = probToColour(shot.probability);
+    const made   = shot.shot_result === "Made";
     const opacity = highlight ? 1.0 : 0.8;
 
     const isHome = shot.team_tricode === HOME_TEAM;
@@ -124,9 +131,11 @@ function drawDot(shot, highlight) {
         el.setAttribute("points", `${sx},${sy-r} ${sx+r},${sy} ${sx},${sy+r} ${sx-r},${sy}`);
     }
 
-    el.setAttribute("fill", fill);
-    el.setAttribute("stroke", stroke);
-    el.setAttribute("stroke-width", strokeW);
+    // made shots are filled, missed shots are hollow
+    el.setAttribute("fill", made ? colour : "none");
+    el.setAttribute("stroke", colour);
+    el.setAttribute("stroke-width", made ? 1 : 2);
+    el.setAttribute("pointer-events", "all"); // hollow shapes still show the tooltip
     el.setAttribute("opacity", opacity);
     el.style.cursor = "pointer";
 
