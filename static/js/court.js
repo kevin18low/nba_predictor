@@ -83,7 +83,7 @@ const liveWinHistory = []; // {elapsed, prob} — built by pollLiveState in live
 // Coordinate mapping
 function toSvg(x, y) { return [x + 250, 450 - y]; }
 
-// Map probabilities to a shade between --muted (unlikely) and --title (likely)
+// Map probabilities to colour: --shot-low (red) -> --shot-mid (yellow) -> --shot-high (green)
 // most shots fall between 20% and 80%, so that range uses the full scale
 function hexToRgb(hex) {
     const n = parseInt(hex.trim().slice(1), 16);
@@ -91,12 +91,17 @@ function hexToRgb(hex) {
 }
 
 const rootStyle = getComputedStyle(document.documentElement);
-const LOW_RGB  = hexToRgb(rootStyle.getPropertyValue("--muted"));
-const HIGH_RGB = hexToRgb(rootStyle.getPropertyValue("--title"));
+const LOW_RGB  = hexToRgb(rootStyle.getPropertyValue("--shot-low"));
+const MID_RGB  = hexToRgb(rootStyle.getPropertyValue("--shot-mid"));
+const HIGH_RGB = hexToRgb(rootStyle.getPropertyValue("--shot-high"));
+
+function mix(from, to, t) {
+    return from.map((c, i) => Math.round(c + (to[i] - c) * t));
+}
 
 function probToColour(prob) {
     const t = Math.min(Math.max((prob - 0.2) / 0.6, 0), 1);
-    const [r, g, b] = LOW_RGB.map((low, i) => Math.round(low + (HIGH_RGB[i] - low) * t));
+    const [r, g, b] = t < 0.5 ? mix(LOW_RGB, MID_RGB, t * 2) : mix(MID_RGB, HIGH_RGB, (t - 0.5) * 2);
     return `rgb(${r},${g},${b})`;
 }
 

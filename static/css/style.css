@@ -8,6 +8,12 @@
     --home: #3D8BFF;
     --away: #FF5257;
     --muted: #737C88;
+    --accent: #72E246;
+
+    /* shot dots: unlikely -> likely */
+    --shot-low: #FF3D3D;
+    --shot-mid: #FFD43B;
+    --shot-high: #3DFF7A;
 }
 
 * {
@@ -324,7 +330,7 @@ a {
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
-    background: var(--title);
+    background: var(--accent);
     color: var(--bg);
     transition: opacity 0.2s;
 }
@@ -465,7 +471,7 @@ a {
     border-radius: 8px;
     font-size: 15px;
     font-weight: 600;
-    background: var(--title);
+    background: var(--accent);
     color: var(--bg);
     border: none;
     cursor: pointer;
